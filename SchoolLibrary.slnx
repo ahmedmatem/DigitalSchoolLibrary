@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="SchoolLibrary.Api/SchoolLibrary.Api.csproj" />
+  <Project Path="SchoolLibrary.Application/SchoolLibrary.Application.csproj" />
+  <Project Path="SchoolLibrary.Domain/SchoolLibrary.Domain.csproj" />
+  <Project Path="SchoolLibrary.Infrastructure/SchoolLibrary.Infrastructure.csproj" />
+</Solution>
