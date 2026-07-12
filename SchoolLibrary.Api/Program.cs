@@ -1,4 +1,7 @@
 
+using Microsoft.EntityFrameworkCore;
+using SchoolLibrary.Infrastructure.Data;
+
 namespace SchoolLibrary.Api
 {
     public class Program
@@ -12,6 +15,11 @@ namespace SchoolLibrary.Api
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(connectionString));
 
             var app = builder.Build();
 
