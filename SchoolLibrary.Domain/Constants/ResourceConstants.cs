@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SchoolLibrary.Domain
+namespace SchoolLibrary.Domain.Constants
 {
-    public static class Constants
+    public static class ResourceConstants
     {
         public const int TitleMaxLength = 200;
         public const int DescriptionMaxLength = 4000;

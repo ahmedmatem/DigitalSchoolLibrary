@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-using static SchoolLibrary.Domain.Constants;
+using static SchoolLibrary.Domain.Constants.ResourceConstants;
 
 namespace SchoolLibrary.Infrastructure.Data.Configurations
 {
