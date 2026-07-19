@@ -18,9 +18,13 @@ namespace SchoolLibrary.Infrastructure.Data
 
         public DbSet<Category> Categories => Set<Category>();
 
-        public DbSet<Grade> Grades => Set<Grade>();
+        public DbSet<GradeLevel> GradeLevels => Set<GradeLevel>();
 
-        public DbSet<ResourceGrade> ResourceGrades => Set<ResourceGrade>();
+        public DbSet<SchoolClass> SchoolClasses => Set<SchoolClass>();
+
+        public DbSet<ResourceGradeLevel> ResourceGradeLevels => Set<ResourceGradeLevel>();
+
+        public DbSet<ResourceSchoolClass> ResourceSchoolClasses => Set<ResourceSchoolClass>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

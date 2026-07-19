@@ -17,6 +17,8 @@ namespace SchoolLibrary.Domain.Entities
 
         public ResourceType Type { get; set; }
 
+        public ResourceAudienceType AudienceType { get; set; }
+
         public string? FilePath { get; set; }
 
         public string? ExternalUrl { get; set; }
@@ -33,11 +35,12 @@ namespace SchoolLibrary.Domain.Entities
 
         public DateTime CreatedAtUtc { get; set; }
 
-        public DateTime? UpdateAtUtc { get; set; }
+        public DateTime? UpdatedAtUtc { get; set; }
 
-        public bool IsArchived { get; set; }
+        public ICollection<ResourceGradeLevel> ResourceGradeLevels { get; set; }
+            = new HashSet<ResourceGradeLevel>();
 
-        public ICollection<ResourceGrade> ResourceGrades { get; set; }
-            = new HashSet<ResourceGrade>();
+        public ICollection<ResourceSchoolClass> ResourceSchoolClasses { get; set; }
+            = new HashSet<ResourceSchoolClass>();
     }
 }

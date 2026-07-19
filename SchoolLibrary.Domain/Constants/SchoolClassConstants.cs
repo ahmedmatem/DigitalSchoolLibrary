@@ -4,8 +4,8 @@ using System.Text;
 
 namespace SchoolLibrary.Domain.Constants
 {
-    public static class GradeConstants
+    public static class SchoolClassConstants
     {
-        public const int NameMaxLength = 20;
+        public const int SectionMaxLength = 2;
     }
 }

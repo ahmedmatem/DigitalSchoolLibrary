@@ -12,7 +12,7 @@ using SchoolLibrary.Infrastructure.Data;
 namespace SchoolLibrary.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260712174100_InitialMigration")]
+    [Migration("20260719190036_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -44,7 +44,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("SchoolLibrary.Domain.Entities.Grade", b =>
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.GradeLevel", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,17 +52,18 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Number")
                         .IsUnique();
 
-                    b.ToTable("Grades");
+                    b.ToTable("GradeLevels", t =>
+                        {
+                            t.HasCheckConstraint("CK_GradeLevels_Number", "[Number] BETWEEN 5 AND 12");
+                        });
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Resource", b =>
@@ -70,6 +71,9 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AudienceType")
+                        .HasColumnType("int");
 
                     b.Property<string>("Author")
                         .HasMaxLength(200)
@@ -98,9 +102,6 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("bit");
-
                     b.Property<Guid>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
@@ -112,7 +113,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("UpdateAtUtc")
+                    b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -124,19 +125,56 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.ToTable("Resources");
                 });
 
-            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceGrade", b =>
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceGradeLevel", b =>
                 {
                     b.Property<Guid>("ResourceId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("GradeId")
+                    b.Property<int>("GradeLevelId")
                         .HasColumnType("int");
 
-                    b.HasKey("ResourceId", "GradeId");
+                    b.HasKey("ResourceId", "GradeLevelId");
 
-                    b.HasIndex("GradeId");
+                    b.HasIndex("GradeLevelId");
 
-                    b.ToTable("ResourceGrades");
+                    b.ToTable("ResourceGradeLevels");
+                });
+
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceSchoolClass", b =>
+                {
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SchoolClassId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ResourceId", "SchoolClassId");
+
+                    b.HasIndex("SchoolClassId");
+
+                    b.ToTable("ResourceSchoolClasses");
+                });
+
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.SchoolClass", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("GradeLevelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Section")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("nvarchar(2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GradeLevelId", "Section")
+                        .IsUnique();
+
+                    b.ToTable("SchoolClasses");
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Subject", b =>
@@ -177,23 +215,53 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Navigation("Subject");
                 });
 
-            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceGrade", b =>
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceGradeLevel", b =>
                 {
-                    b.HasOne("SchoolLibrary.Domain.Entities.Grade", "Grade")
-                        .WithMany("ResourceGrades")
-                        .HasForeignKey("GradeId")
+                    b.HasOne("SchoolLibrary.Domain.Entities.GradeLevel", "GradeLevel")
+                        .WithMany("ResourceGradeLevels")
+                        .HasForeignKey("GradeLevelId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("SchoolLibrary.Domain.Entities.Resource", "Resource")
-                        .WithMany("ResourceGrades")
+                        .WithMany("ResourceGradeLevels")
                         .HasForeignKey("ResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Grade");
+                    b.Navigation("GradeLevel");
 
                     b.Navigation("Resource");
+                });
+
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceSchoolClass", b =>
+                {
+                    b.HasOne("SchoolLibrary.Domain.Entities.Resource", "Resource")
+                        .WithMany("ResourceSchoolClasses")
+                        .HasForeignKey("ResourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SchoolLibrary.Domain.Entities.SchoolClass", "SchoolClass")
+                        .WithMany("ResourceSchoolClasses")
+                        .HasForeignKey("SchoolClassId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Resource");
+
+                    b.Navigation("SchoolClass");
+                });
+
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.SchoolClass", b =>
+                {
+                    b.HasOne("SchoolLibrary.Domain.Entities.GradeLevel", "GradeLevel")
+                        .WithMany("SchoolClasses")
+                        .HasForeignKey("GradeLevelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GradeLevel");
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Category", b =>
@@ -201,14 +269,23 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Navigation("Resources");
                 });
 
-            modelBuilder.Entity("SchoolLibrary.Domain.Entities.Grade", b =>
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.GradeLevel", b =>
                 {
-                    b.Navigation("ResourceGrades");
+                    b.Navigation("ResourceGradeLevels");
+
+                    b.Navigation("SchoolClasses");
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Resource", b =>
                 {
-                    b.Navigation("ResourceGrades");
+                    b.Navigation("ResourceGradeLevels");
+
+                    b.Navigation("ResourceSchoolClasses");
+                });
+
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.SchoolClass", b =>
+                {
+                    b.Navigation("ResourceSchoolClasses");
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Subject", b =>
