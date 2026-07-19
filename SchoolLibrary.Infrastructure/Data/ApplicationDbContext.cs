@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Domain.Entities;
+using SchoolLibrary.Infrastructure.Data.Seed;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,6 +33,8 @@ namespace SchoolLibrary.Infrastructure.Data
 
             modelBuilder.ApplyConfigurationsFromAssembly(
                 typeof(ApplicationDbContext).Assembly);
+
+            modelBuilder.SeedInitialData();
         }
     }
 }
