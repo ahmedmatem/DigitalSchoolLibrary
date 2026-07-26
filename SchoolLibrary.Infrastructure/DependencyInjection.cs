@@ -21,6 +21,7 @@ namespace SchoolLibrary.Infrastructure
                 options.UseSqlServer(connectionString));
 
             services.AddScoped<ILookupService, LookupService>();
+            services.AddScoped<IResourceService, ResourceService>();
 
             return services;
         }
