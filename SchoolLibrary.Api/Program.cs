@@ -1,7 +1,4 @@
-
-using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Infrastructure;
-using SchoolLibrary.Infrastructure.Data;
 
 namespace SchoolLibrary.Api
 {

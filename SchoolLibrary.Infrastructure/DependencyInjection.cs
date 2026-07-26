@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
-using SchoolLibrary.Infrastructure.Services.Lookups;
+using SchoolLibrary.Infrastructure.Services;
 
 namespace SchoolLibrary.Infrastructure
 {
@@ -21,6 +21,7 @@ namespace SchoolLibrary.Infrastructure
                 options.UseSqlServer(connectionString));
 
             services.AddScoped<ILookupService, LookupService>();
+            services.AddScoped<IResourceService, ResourceService>();
 
             return services;
         }
