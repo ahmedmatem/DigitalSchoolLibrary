@@ -3,7 +3,7 @@ using SchoolLibrary.Application.DTOs.LookupDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
 
-namespace SchoolLibrary.Infrastructure.Services.Lookups
+namespace SchoolLibrary.Infrastructure.Services
 {
     public class LookupService : ILookupService
     {
