@@ -1,10 +1,11 @@
-﻿using SchoolLibrary.Application.DTOs.ResourceDTOs;
+﻿using SchoolLibrary.Application.Common.Models;
+using SchoolLibrary.Application.DTOs.ResourceDTOs;
 
 namespace SchoolLibrary.Application.Interfaces
 {
     public interface IResourceService
     {
-        Task<IReadOnlyCollection<ResourceListDto>> GetAllAsync(
+        Task<PageResult<ResourceListDto>> GetAllAsync(
             ResourceQueryDto queryModel,
             CancellationToken cancellationToken = default);
 
@@ -21,7 +22,11 @@ namespace SchoolLibrary.Application.Interfaces
             UpdateResourceDto model,
             CancellationToken cancellationToken = default);
 
-        Task<bool> DeleteAsync(
+        Task<bool> ArchiveAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> RestoreAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

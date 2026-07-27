@@ -37,6 +37,10 @@ namespace SchoolLibrary.Domain.Entities
 
         public DateTime? UpdatedAtUtc { get; set; }
 
+        public bool IsArchived { get; set; }
+
+        public DateTime? ArchivedAtUtc { get; set; }
+
         public ICollection<ResourceGradeLevel> ResourceGradeLevels { get; set; }
             = new HashSet<ResourceGradeLevel>();
 

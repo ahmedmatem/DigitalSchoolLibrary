@@ -50,6 +50,13 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .IsRequired();
 
             builder
+                .Property(resource => resource.IsArchived)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.HasIndex(resource => resource.IsArchived);
+
+            builder
                 .HasOne(r => r.Subject)
                 .WithMany(s => s.Resources)
                 .HasForeignKey(r => r.SubjectId)

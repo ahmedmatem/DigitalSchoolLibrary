@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 
@@ -16,15 +17,15 @@ namespace SchoolLibrary.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyCollection<ResourceListDto>>> GetAll(
+        public async Task<ActionResult<PageResult<ResourceListDto>>> GetAll(
             [FromQuery] ResourceQueryDto queryModel,
             CancellationToken cancellationToken)
         {
-            var resources = await resourceService.GetAllAsync(
+            var result = await resourceService.GetAllAsync(
                 queryModel,
                 cancellationToken);
 
-            return Ok(resources);
+            return Ok(result);
         }
 
         [HttpGet("{id:guid}")]
@@ -94,15 +95,29 @@ namespace SchoolLibrary.Api.Controllers
             }
         }
 
-        [HttpDelete("{id:guid}")]
-        public async Task<ActionResult> Delete(
+        [HttpPatch("{id:guid}/archive")]
+        public async Task<ActionResult> Archive(
             Guid id,
             CancellationToken cancellationToken)
         {
-            var deleted = await resourceService
-                .DeleteAsync(id, cancellationToken);
+            var archived = await resourceService.ArchiveAsync(id, cancellationToken);
 
-            if (!deleted)
+            if (!archived)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("{id:guid}/restore")]
+        public async Task<ActionResult> Restore(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var restored = await resourceService.RestoreAsync(id, cancellationToken);
+
+            if (!restored)
             {
                 return NotFound();
             }

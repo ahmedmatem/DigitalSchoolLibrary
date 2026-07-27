@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Domain.Entities;
@@ -16,12 +17,13 @@ namespace SchoolLibrary.Infrastructure.Services
             this.dbContext = dbContext;
         }
 
-        public async Task<IReadOnlyCollection<ResourceListDto>> GetAllAsync(
+        public async Task<PageResult<ResourceListDto>> GetAllAsync(
             ResourceQueryDto queryModel,
             CancellationToken cancellationToken = default)
         {
             var query = dbContext.Resources
                 .AsNoTracking()
+                .Where(resource => !resource.IsArchived)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(queryModel.Search))
@@ -37,8 +39,55 @@ namespace SchoolLibrary.Infrastructure.Services
                     resource.Category.Name.Contains(searchTerm));
             }
 
-            return await query
+            if (queryModel.SubjectId.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.SubjectId == queryModel.SubjectId.Value);
+            }
+
+            if (queryModel.CategoryId.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.CategoryId == queryModel.CategoryId.Value);
+            }
+
+            if (queryModel.Type.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.Type == queryModel.Type.Value);
+            }
+
+            if (queryModel.AudienceType.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.AudienceType == queryModel.AudienceType.Value);
+            }
+
+            if (queryModel.GradeLevelId.HasValue)
+            {
+                var gradeLevelId = queryModel.GradeLevelId.Value;
+
+                query = query.Where(resource =>
+                    resource.ResourceGradeLevels.Any(item =>
+                        item.GradeLevelId == gradeLevelId));
+            }
+
+            if (queryModel.SchoolClassId.HasValue)
+            {
+                var schoolClassId = queryModel.SchoolClassId.Value;
+
+                query = query.Where(resource =>
+                    resource.ResourceSchoolClasses.Any(item =>
+                        item.SchoolClassId == schoolClassId));
+            }
+
+            var totalCount = await query.CountAsync(cancellationToken);
+
+            var items = await query
                 .OrderByDescending(resource => resource.CreatedAtUtc)
+                .ThenBy(resource => resource.Id)
+                .Skip((queryModel.Page - 1) * queryModel.PageSize)
+                .Take(queryModel.PageSize)
                 .Select(resource => new ResourceListDto
                 {
                     Id = resource.Id,
@@ -51,6 +100,14 @@ namespace SchoolLibrary.Infrastructure.Services
                     CreatedAtUtc = resource.CreatedAtUtc
                 })
                 .ToListAsync(cancellationToken);
+
+            return new PageResult<ResourceListDto>
+            {
+                Items = items,
+                Page = queryModel.Page,
+                PageSize = queryModel.PageSize,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<ResourceDetailsDto?> GetByIdAsync(
@@ -59,7 +116,7 @@ namespace SchoolLibrary.Infrastructure.Services
         {
             return await dbContext.Resources
                 .AsNoTracking()
-                .Where(resource => resource.Id == id)
+                .Where(resource => resource.Id == id && !resource.IsArchived)
                 .Select(resource => new ResourceDetailsDto
                 {
                     Id = resource.Id,
@@ -112,7 +169,9 @@ namespace SchoolLibrary.Infrastructure.Services
                 SubjectId = model.SubjectId,
                 CategoryId = model.CategoryId,
                 AudienceType = model.AudienceType,
-                CreatedAtUtc = DateTime.UtcNow
+                CreatedAtUtc = DateTime.UtcNow,
+                IsArchived = false,
+                ArchivedAtUtc = null
             };
 
             AddAudienceRelations(
@@ -179,7 +238,7 @@ namespace SchoolLibrary.Infrastructure.Services
             return true;
         }
 
-        public async Task<bool> DeleteAsync(
+        public async Task<bool> ArchiveAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
@@ -193,7 +252,38 @@ namespace SchoolLibrary.Infrastructure.Services
                 return false;
             }
 
-            dbContext.Resources.Remove(resource);
+            if (resource.IsArchived)
+            {
+                return true;
+            }
+
+            // Mark the resource as archived instead of deleting it from the database
+            resource.IsArchived = true;
+            resource.ArchivedAtUtc = DateTime.UtcNow;
+            resource.UpdatedAtUtc = DateTime.UtcNow;
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
+
+        public async Task<bool> RestoreAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var resource = await dbContext.Resources
+                .FirstOrDefaultAsync(
+                    resource => resource.Id == id,
+                    cancellationToken);
+
+            if (resource is null)
+            {
+                return false;
+            }
+
+            resource.IsArchived = false;
+            resource.ArchivedAtUtc = null;
+            resource.UpdatedAtUtc = DateTime.UtcNow;
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
