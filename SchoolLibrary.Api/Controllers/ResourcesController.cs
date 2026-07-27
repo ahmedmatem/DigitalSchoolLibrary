@@ -16,11 +16,13 @@ namespace SchoolLibrary.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyCollection<ResourceListDto>>>
-            GetAll(CancellationToken cancellationToken)
+        public async Task<ActionResult<IReadOnlyCollection<ResourceListDto>>> GetAll(
+            [FromQuery] ResourceQueryDto queryModel,
+            CancellationToken cancellationToken)
         {
-            var resources = await resourceService
-                .GetAllAsync(cancellationToken);
+            var resources = await resourceService.GetAllAsync(
+                queryModel,
+                cancellationToken);
 
             return Ok(resources);
         }

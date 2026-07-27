@@ -5,7 +5,8 @@ namespace SchoolLibrary.Application.Interfaces
     public interface IResourceService
     {
         Task<IReadOnlyCollection<ResourceListDto>> GetAllAsync(
-        CancellationToken cancellationToken = default);
+            ResourceQueryDto queryModel,
+            CancellationToken cancellationToken = default);
 
         Task<ResourceDetailsDto?> GetByIdAsync(
             Guid id,

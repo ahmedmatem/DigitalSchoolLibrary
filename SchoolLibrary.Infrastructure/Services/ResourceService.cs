@@ -17,10 +17,27 @@ namespace SchoolLibrary.Infrastructure.Services
         }
 
         public async Task<IReadOnlyCollection<ResourceListDto>> GetAllAsync(
+            ResourceQueryDto queryModel,
             CancellationToken cancellationToken = default)
         {
-            return await dbContext.Resources
+            var query = dbContext.Resources
                 .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(queryModel.Search))
+            {
+                var searchTerm = queryModel.Search.Trim();
+
+                query = query.Where(resource =>
+                    resource.Title.Contains(searchTerm) ||
+                    resource.Description.Contains(searchTerm) ||
+                    (resource.Author != null &&
+                     resource.Author.Contains(searchTerm)) ||
+                    resource.Subject.Name.Contains(searchTerm) ||
+                    resource.Category.Name.Contains(searchTerm));
+            }
+
+            return await query
                 .OrderByDescending(resource => resource.CreatedAtUtc)
                 .Select(resource => new ResourceListDto
                 {
