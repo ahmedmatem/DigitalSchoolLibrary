@@ -49,23 +49,9 @@ namespace SchoolLibrary.Api.Controllers
             CreateResourceDto model,
             CancellationToken cancellationToken)
         {
-            try
-            {
-                var id = await resourceService
-                    .CreateAsync(model, cancellationToken);
+            var id = await resourceService.CreateAsync(model, cancellationToken);
 
-                return CreatedAtAction(
-                    nameof(GetById),
-                    new { id },
-                    new { id });
-            }
-            catch (ArgumentException exception)
-            {
-                return BadRequest(new
-                {
-                    error = exception.Message
-                });
-            }
+            return CreatedAtAction(nameof(GetById), new { id }, new { id });
         }
 
         [HttpPut("{id:guid}")]
@@ -74,25 +60,14 @@ namespace SchoolLibrary.Api.Controllers
             UpdateResourceDto model,
             CancellationToken cancellationToken)
         {
-            try
-            {
-                var updated = await resourceService
-                    .UpdateAsync(id, model, cancellationToken);
+            var updated = await resourceService.UpdateAsync(id, model, cancellationToken);
 
-                if (!updated)
-                {
-                    return NotFound();
-                }
-
-                return NoContent();
-            }
-            catch (ArgumentException exception)
+            if (!updated)
             {
-                return BadRequest(new
-                {
-                    error = exception.Message
-                });
+                return NotFound();
             }
+
+            return NoContent();
         }
 
         [HttpPatch("{id:guid}/archive")]
