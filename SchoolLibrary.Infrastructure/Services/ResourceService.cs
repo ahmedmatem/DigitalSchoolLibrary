@@ -438,11 +438,12 @@ namespace SchoolLibrary.Infrastructure.Services
         {
             if (audienceType == ResourceAudienceType.GradeLevels)
             {
-                foreach (var gradeLevelId in gradeLevelIds.Distinct())
+                foreach (var gradeLevelId in gradeLevelIds)
                 {
                     resource.ResourceGradeLevels.Add(
                         new ResourceGradeLevel
                         {
+                            ResourceId = resource.Id,
                             GradeLevelId = gradeLevelId
                         });
                 }
@@ -450,11 +451,12 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (audienceType == ResourceAudienceType.SchoolClasses)
             {
-                foreach (var schoolClassId in schoolClassIds.Distinct())
+                foreach (var schoolClassId in schoolClassIds)
                 {
                     resource.ResourceSchoolClasses.Add(
                         new ResourceSchoolClass
                         {
+                            ResourceId = resource.Id,
                             SchoolClassId = schoolClassId
                         });
                 }
@@ -494,6 +496,13 @@ namespace SchoolLibrary.Infrastructure.Services
                 throw new ValidationException(
                     "Ресурсът не може едновременно да съдържа файл и външна връзка.");
             }
+        }
+
+        private static string? NormalizeOptionalText(string? value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? null
+                : value.Trim();
         }
     }
 }
