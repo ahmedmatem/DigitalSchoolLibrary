@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SchoolLibrary.Application.Common.Exceptions;
 using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
@@ -148,12 +149,25 @@ namespace SchoolLibrary.Infrastructure.Services
             CreateResourceDto model,
             CancellationToken cancellationToken = default)
         {
+            var gradeLevelIds = model.GradeLevelIds
+                .Distinct()
+                .ToArray();
+
+            var schoolClassIds = model.SchoolClassIds
+                .Distinct()
+                .ToArray();
+
+            ValidateResourceLocation(
+                model.Type,
+                model.FilePath,
+                model.ExternalUrl);
+
             await ValidateReferencesAsync(
                 model.SubjectId,
                 model.CategoryId,
                 model.AudienceType,
-                model.GradeLevelIds,
-                model.SchoolClassIds,
+                gradeLevelIds,
+                schoolClassIds,
                 cancellationToken);
 
             var resource = new Resource
@@ -177,8 +191,8 @@ namespace SchoolLibrary.Infrastructure.Services
             AddAudienceRelations(
                 resource,
                 model.AudienceType,
-                model.GradeLevelIds,
-                model.SchoolClassIds);
+                gradeLevelIds,
+                schoolClassIds);
 
             dbContext.Resources.Add(resource);
 
@@ -204,12 +218,25 @@ namespace SchoolLibrary.Infrastructure.Services
                 return false;
             }
 
+            var gradeLevelIds = model.GradeLevelIds
+                .Distinct()
+                .ToArray();
+
+            var schoolClassIds = model.SchoolClassIds
+                .Distinct()
+                .ToArray();
+
+            ValidateResourceLocation(
+                model.Type,
+                model.FilePath,
+                model.ExternalUrl);
+
             await ValidateReferencesAsync(
                 model.SubjectId,
                 model.CategoryId,
                 model.AudienceType,
-                model.GradeLevelIds,
-                model.SchoolClassIds,
+                gradeLevelIds,
+                schoolClassIds,
                 cancellationToken);
 
             resource.Title = model.Title.Trim();
@@ -230,8 +257,8 @@ namespace SchoolLibrary.Infrastructure.Services
             AddAudienceRelations(
                 resource,
                 model.AudienceType,
-                model.GradeLevelIds,
-                model.SchoolClassIds);
+                gradeLevelIds,
+                schoolClassIds);
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -294,10 +321,16 @@ namespace SchoolLibrary.Infrastructure.Services
             Guid subjectId,
             Guid categoryId,
             ResourceAudienceType audienceType,
-            ICollection<int> gradeLevelIds,
-            ICollection<Guid> schoolClassIds,
+            IReadOnlyCollection<int> gradeLevelIds,
+            IReadOnlyCollection<Guid> schoolClassIds,
             CancellationToken cancellationToken)
         {
+            if (subjectId == Guid.Empty)
+            {
+                throw new ValidationException(
+                    "Трябва да бъде избран валиден предмет.");
+            }
+
             var subjectExists = await dbContext.Subjects
                 .AnyAsync(
                     subject => subject.Id == subjectId,
@@ -305,7 +338,14 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (!subjectExists)
             {
-                throw new ArgumentException("The selected subject does not exist.");
+                throw new ValidationException(
+                    "Избраният предмет не съществува.");
+            }
+
+            if (categoryId == Guid.Empty)
+            {
+                throw new ValidationException(
+                    "Трябва да бъде избрана валидна категория.");
             }
 
             var categoryExists = await dbContext.Categories
@@ -315,16 +355,18 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (!categoryExists)
             {
-                throw new ArgumentException("The selected category does not exist.");
+                throw new ValidationException(
+                    "Избраната категория не съществува.");
             }
 
             switch (audienceType)
             {
                 case ResourceAudienceType.AllStudents:
-                    if (gradeLevelIds.Count > 0 || schoolClassIds.Count > 0)
+                    if (gradeLevelIds.Count > 0 ||
+                        schoolClassIds.Count > 0)
                     {
-                        throw new ArgumentException(
-                            "Audience collections must be empty for AllStudents.");
+                        throw new ValidationException(
+                            "При аудитория „Всички ученици“ не трябва да се избират класове или паралелки.");
                     }
 
                     break;
@@ -332,26 +374,26 @@ namespace SchoolLibrary.Infrastructure.Services
                 case ResourceAudienceType.GradeLevels:
                     if (gradeLevelIds.Count == 0)
                     {
-                        throw new ArgumentException(
-                            "At least one grade level must be selected.");
+                        throw new ValidationException(
+                            "Трябва да бъде избран поне един клас.");
                     }
 
                     if (schoolClassIds.Count > 0)
                     {
-                        throw new ArgumentException(
-                            "School classes cannot be selected for GradeLevels.");
+                        throw new ValidationException(
+                            "При аудитория по класове не трябва да се избират паралелки.");
                     }
 
-                    var existingGradeCount = await dbContext.GradeLevels
-                        .CountAsync(
+                    var existingGradeLevelCount =
+                        await dbContext.GradeLevels.CountAsync(
                             gradeLevel =>
                                 gradeLevelIds.Contains(gradeLevel.Id),
                             cancellationToken);
 
-                    if (existingGradeCount != gradeLevelIds.Distinct().Count())
+                    if (existingGradeLevelCount != gradeLevelIds.Count)
                     {
-                        throw new ArgumentException(
-                            "One or more grade levels do not exist.");
+                        throw new ValidationException(
+                            "Един или повече от избраните класове не съществуват.");
                     }
 
                     break;
@@ -359,34 +401,32 @@ namespace SchoolLibrary.Infrastructure.Services
                 case ResourceAudienceType.SchoolClasses:
                     if (schoolClassIds.Count == 0)
                     {
-                        throw new ArgumentException(
-                            "At least one school class must be selected.");
+                        throw new ValidationException(
+                            "Трябва да бъде избрана поне една паралелка.");
                     }
 
                     if (gradeLevelIds.Count > 0)
                     {
-                        throw new ArgumentException(
-                            "Grade levels cannot be selected for SchoolClasses.");
+                        throw new ValidationException(
+                            "При аудитория по паралелки не трябва да се избират цели класове.");
                     }
 
-                    var existingClassCount = await dbContext.SchoolClasses
-                        .CountAsync(
+                    var existingSchoolClassCount =
+                        await dbContext.SchoolClasses.CountAsync(
                             schoolClass =>
                                 schoolClassIds.Contains(schoolClass.Id),
                             cancellationToken);
 
-                    if (existingClassCount != schoolClassIds.Distinct().Count())
+                    if (existingSchoolClassCount != schoolClassIds.Count)
                     {
-                        throw new ArgumentException(
-                            "One or more school classes do not exist.");
+                        throw new ValidationException(
+                            "Една или повече от избраните паралелки не съществуват.");
                     }
 
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(audienceType),
-                        "Unsupported audience type.");
+                    throw new ValidationException("Избраният тип аудитория е невалиден.");
             }
         }
 
@@ -418,6 +458,41 @@ namespace SchoolLibrary.Infrastructure.Services
                             SchoolClassId = schoolClassId
                         });
                 }
+            }
+        }
+
+        private static void ValidateResourceLocation(
+            ResourceType type,
+            string? filePath,
+            string? externalUrl)
+        {
+            if (type == ResourceType.ExternalLink)
+            {
+                if (string.IsNullOrWhiteSpace(externalUrl))
+                {
+                    throw new ValidationException(
+                        "За ресурс от тип външна връзка трябва да бъде зададен URL.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(filePath))
+                {
+                    throw new ValidationException(
+                        "Ресурс от тип външна връзка не трябва да съдържа файл.");
+                }
+
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                throw new ValidationException(
+                    "За този тип ресурс трябва да бъде зададен файл.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(externalUrl))
+            {
+                throw new ValidationException(
+                    "Ресурсът не може едновременно да съдържа файл и външна връзка.");
             }
         }
     }
