@@ -19,11 +19,17 @@ namespace SchoolLibrary.Domain.Entities
 
         public ResourceAudienceType AudienceType { get; set; }
 
-        public string? FilePath { get; set; }
+        public string? FileStorageKey { get; set; }
+
+        public string? OriginalFileName { get; set; }
+
+        public string? FileContentType { get; set; }
+
+        public long? FileSize { get; set; }
 
         public string? ExternalUrl { get; set; }
 
-        public string? CoverImagePath { get; set; }
+        public string? CoverStorageKey { get; set; }
 
         public Guid SubjectId { get; set; }
 
