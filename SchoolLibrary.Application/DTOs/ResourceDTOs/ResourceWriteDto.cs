@@ -35,22 +35,26 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
             ErrorMessage = "Невалиден тип на ресурса.")]
         public ResourceType Type { get; set; }
 
-        [StringLength(
-            ResourceConstants.FilePathMaxLength,
-            ErrorMessage = "Пътят до файла може да съдържа до {1} символа.")]
-        public string? FilePath { get; set; }
+        [StringLength(500)]
+        public string? FileStorageKey { get; set; }
+
+        [StringLength(255)]
+        public string? OriginalFileName { get; set; }
+
+        [StringLength(150)]
+        public string? FileContentType { get; set; }
+
+        [Range(1, long.MaxValue)]
+        public long? FileSize { get; set; }
+
+        [StringLength(500)]
+        public string? CoverStorageKey { get; set; }
 
         [StringLength(
             ResourceConstants.ExternalUrlMaxLength,
             ErrorMessage = "Адресът може да съдържа до {1} символа.")]
         [Url(ErrorMessage = "Въведеният външен адрес не е валиден URL.")]
         public string? ExternalUrl { get; set; }
-
-        [StringLength(
-            ResourceConstants.CoverImagePathMaxLength,
-            ErrorMessage =
-                "Пътят до изображението може да съдържа до {1} символа.")]
-        public string? CoverImagePath { get; set; }
 
         [Required(ErrorMessage = "Трябва да бъде избран предмет.")]
         public Guid SubjectId { get; set; }

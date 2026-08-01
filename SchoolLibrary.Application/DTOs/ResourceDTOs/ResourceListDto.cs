@@ -16,7 +16,7 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public string CategoryName { get; set; } = string.Empty;
 
-        public string? CoverImagePath { get; set; }
+        public string? CoverStorageKey { get; set; }
 
         public DateTime CreatedAtUtc { get; set; }
     }

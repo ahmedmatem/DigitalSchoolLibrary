@@ -1,6 +1,6 @@
 ﻿namespace SchoolLibrary.Application.Common.Models
 {
-    public class PageResult<T>
+    public class PagedResult<T>
     {
         public IReadOnlyCollection<T> Items { get; init; } = [];
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Application.Common.Exceptions;
 using SchoolLibrary.Application.Common.Models;
+using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Domain.Entities;
@@ -12,13 +13,21 @@ namespace SchoolLibrary.Infrastructure.Services
     public class ResourceService : IResourceService
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly IFileStorageService fileStorageService;
 
-        public ResourceService(ApplicationDbContext dbContext)
+        public ResourceService(
+            ApplicationDbContext dbContext,
+            IFileStorageService fileStorageService)
         {
             this.dbContext = dbContext;
+            this.fileStorageService = fileStorageService;
         }
 
-        public async Task<PageResult<ResourceListDto>> GetAllAsync(
+        // =========================================================
+        // GET ALL: търсене, филтриране и странициране
+        // =========================================================
+
+        public async Task<PagedResult<ResourceListDto>> GetAllAsync(
             ResourceQueryDto queryModel,
             CancellationToken cancellationToken = default)
         {
@@ -69,8 +78,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 var gradeLevelId = queryModel.GradeLevelId.Value;
 
                 query = query.Where(resource =>
-                    resource.ResourceGradeLevels.Any(item =>
-                        item.GradeLevelId == gradeLevelId));
+                    resource.ResourceGradeLevels.Any(resourceGradeLevel =>
+                        resourceGradeLevel.GradeLevelId == gradeLevelId));
             }
 
             if (queryModel.SchoolClassId.HasValue)
@@ -78,8 +87,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 var schoolClassId = queryModel.SchoolClassId.Value;
 
                 query = query.Where(resource =>
-                    resource.ResourceSchoolClasses.Any(item =>
-                        item.SchoolClassId == schoolClassId));
+                    resource.ResourceSchoolClasses.Any(resourceSchoolClass =>
+                        resourceSchoolClass.SchoolClassId == schoolClassId));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);
@@ -97,12 +106,14 @@ namespace SchoolLibrary.Infrastructure.Services
                     Type = resource.Type,
                     SubjectName = resource.Subject.Name,
                     CategoryName = resource.Category.Name,
-                    CoverImagePath = resource.CoverImagePath,
+
+                    CoverStorageKey = resource.CoverStorageKey,
+
                     CreatedAtUtc = resource.CreatedAtUtc
                 })
                 .ToListAsync(cancellationToken);
 
-            return new PageResult<ResourceListDto>
+            return new PagedResult<ResourceListDto>
             {
                 Items = items,
                 Page = queryModel.Page,
@@ -111,13 +122,19 @@ namespace SchoolLibrary.Infrastructure.Services
             };
         }
 
+        // =========================================================
+        // GET BY ID
+        // =========================================================
+
         public async Task<ResourceDetailsDto?> GetByIdAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             return await dbContext.Resources
                 .AsNoTracking()
-                .Where(resource => resource.Id == id && !resource.IsArchived)
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived)
                 .Select(resource => new ResourceDetailsDto
                 {
                     Id = resource.Id,
@@ -125,25 +142,40 @@ namespace SchoolLibrary.Infrastructure.Services
                     Description = resource.Description,
                     Author = resource.Author,
                     Type = resource.Type,
-                    FilePath = resource.FilePath,
+
+                    FileStorageKey = resource.FileStorageKey,
+                    OriginalFileName = resource.OriginalFileName,
+                    FileContentType = resource.FileContentType,
+                    FileSize = resource.FileSize,
+                    CoverStorageKey = resource.CoverStorageKey,
+
                     ExternalUrl = resource.ExternalUrl,
-                    CoverImagePath = resource.CoverImagePath,
+
                     SubjectId = resource.SubjectId,
                     SubjectName = resource.Subject.Name,
+
                     CategoryId = resource.CategoryId,
                     CategoryName = resource.Category.Name,
+
                     AudienceType = resource.AudienceType,
+
                     GradeLevelIds = resource.ResourceGradeLevels
                         .Select(item => item.GradeLevelId)
                         .ToArray(),
+
                     SchoolClassIds = resource.ResourceSchoolClasses
                         .Select(item => item.SchoolClassId)
                         .ToArray(),
+
                     CreatedAtUtc = resource.CreatedAtUtc,
                     UpdatedAtUtc = resource.UpdatedAtUtc
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
+
+        // =========================================================
+        // CREATE
+        // =========================================================
 
         public async Task<Guid> CreateAsync(
             CreateResourceDto model,
@@ -159,7 +191,7 @@ namespace SchoolLibrary.Infrastructure.Services
 
             ValidateResourceLocation(
                 model.Type,
-                model.FilePath,
+                model.FileStorageKey,
                 model.ExternalUrl);
 
             await ValidateReferencesAsync(
@@ -170,20 +202,45 @@ namespace SchoolLibrary.Infrastructure.Services
                 schoolClassIds,
                 cancellationToken);
 
+            await ValidateStoredFilesAsync(
+                model.FileStorageKey,
+                model.CoverStorageKey,
+                cancellationToken);
+
             var resource = new Resource
             {
                 Id = Guid.NewGuid(),
+
                 Title = model.Title.Trim(),
                 Description = model.Description.Trim(),
-                Author = model.Author?.Trim(),
+                Author = NormalizeOptionalText(model.Author),
+
                 Type = model.Type,
-                FilePath = model.FilePath?.Trim(),
-                ExternalUrl = model.ExternalUrl?.Trim(),
-                CoverImagePath = model.CoverImagePath?.Trim(),
+                AudienceType = model.AudienceType,
+
+                FileStorageKey =
+                    NormalizeOptionalText(model.FileStorageKey),
+
+                OriginalFileName =
+                    NormalizeOptionalText(model.OriginalFileName),
+
+                FileContentType =
+                    NormalizeOptionalText(model.FileContentType),
+
+                FileSize = model.FileSize,
+
+                CoverStorageKey =
+                    NormalizeOptionalText(model.CoverStorageKey),
+
+                ExternalUrl =
+                    NormalizeOptionalText(model.ExternalUrl),
+
                 SubjectId = model.SubjectId,
                 CategoryId = model.CategoryId,
-                AudienceType = model.AudienceType,
+
                 CreatedAtUtc = DateTime.UtcNow,
+                UpdatedAtUtc = null,
+
                 IsArchived = false,
                 ArchivedAtUtc = null
             };
@@ -201,16 +258,20 @@ namespace SchoolLibrary.Infrastructure.Services
             return resource.Id;
         }
 
+        // =========================================================
+        // UPDATE
+        // =========================================================
+
         public async Task<bool> UpdateAsync(
             Guid id,
             UpdateResourceDto model,
             CancellationToken cancellationToken = default)
         {
             var resource = await dbContext.Resources
-                .Include(item => item.ResourceGradeLevels)
-                .Include(item => item.ResourceSchoolClasses)
+                .Include(resource => resource.ResourceGradeLevels)
+                .Include(resource => resource.ResourceSchoolClasses)
                 .FirstOrDefaultAsync(
-                    item => item.Id == id,
+                    resource => resource.Id == id,
                     cancellationToken);
 
             if (resource is null)
@@ -228,7 +289,7 @@ namespace SchoolLibrary.Infrastructure.Services
 
             ValidateResourceLocation(
                 model.Type,
-                model.FilePath,
+                model.FileStorageKey,
                 model.ExternalUrl);
 
             await ValidateReferencesAsync(
@@ -239,16 +300,59 @@ namespace SchoolLibrary.Infrastructure.Services
                 schoolClassIds,
                 cancellationToken);
 
+            /*
+             * Проверяваме R2 само ако ключът е нов или е променен.
+             * Това спестява излишна HEAD заявка при редакция само на заглавието.
+             */
+            if (!string.Equals(
+                    resource.FileStorageKey,
+                    model.FileStorageKey,
+                    StringComparison.Ordinal))
+            {
+                await ValidateStorageObjectAsync(
+                    model.FileStorageKey,
+                    "Каченият учебен файл не беше намерен.",
+                    cancellationToken);
+            }
+
+            if (!string.Equals(
+                    resource.CoverStorageKey,
+                    model.CoverStorageKey,
+                    StringComparison.Ordinal))
+            {
+                await ValidateStorageObjectAsync(
+                    model.CoverStorageKey,
+                    "Каченото изображение за корица не беше намерено.",
+                    cancellationToken);
+            }
+
             resource.Title = model.Title.Trim();
             resource.Description = model.Description.Trim();
-            resource.Author = model.Author?.Trim();
+            resource.Author = NormalizeOptionalText(model.Author);
+
             resource.Type = model.Type;
-            resource.FilePath = model.FilePath?.Trim();
-            resource.ExternalUrl = model.ExternalUrl?.Trim();
-            resource.CoverImagePath = model.CoverImagePath?.Trim();
+            resource.AudienceType = model.AudienceType;
+
+            resource.FileStorageKey =
+                NormalizeOptionalText(model.FileStorageKey);
+
+            resource.OriginalFileName =
+                NormalizeOptionalText(model.OriginalFileName);
+
+            resource.FileContentType =
+                NormalizeOptionalText(model.FileContentType);
+
+            resource.FileSize = model.FileSize;
+
+            resource.CoverStorageKey =
+                NormalizeOptionalText(model.CoverStorageKey);
+
+            resource.ExternalUrl =
+                NormalizeOptionalText(model.ExternalUrl);
+
             resource.SubjectId = model.SubjectId;
             resource.CategoryId = model.CategoryId;
-            resource.AudienceType = model.AudienceType;
+
             resource.UpdatedAtUtc = DateTime.UtcNow;
 
             resource.ResourceGradeLevels.Clear();
@@ -265,13 +369,17 @@ namespace SchoolLibrary.Infrastructure.Services
             return true;
         }
 
+        // =========================================================
+        // ARCHIVE
+        // =========================================================
+
         public async Task<bool> ArchiveAsync(
             Guid id,
             CancellationToken cancellationToken = default)
         {
             var resource = await dbContext.Resources
                 .FirstOrDefaultAsync(
-                    item => item.Id == id,
+                    resource => resource.Id == id,
                     cancellationToken);
 
             if (resource is null)
@@ -284,7 +392,6 @@ namespace SchoolLibrary.Infrastructure.Services
                 return true;
             }
 
-            // Mark the resource as archived instead of deleting it from the database
             resource.IsArchived = true;
             resource.ArchivedAtUtc = DateTime.UtcNow;
             resource.UpdatedAtUtc = DateTime.UtcNow;
@@ -293,6 +400,10 @@ namespace SchoolLibrary.Infrastructure.Services
 
             return true;
         }
+
+        // =========================================================
+        // RESTORE
+        // =========================================================
 
         public async Task<bool> RestoreAsync(
             Guid id,
@@ -308,6 +419,11 @@ namespace SchoolLibrary.Infrastructure.Services
                 return false;
             }
 
+            if (!resource.IsArchived)
+            {
+                return true;
+            }
+
             resource.IsArchived = false;
             resource.ArchivedAtUtc = null;
             resource.UpdatedAtUtc = DateTime.UtcNow;
@@ -316,6 +432,139 @@ namespace SchoolLibrary.Infrastructure.Services
 
             return true;
         }
+
+        // =========================================================
+        // DOWNLOAD URL
+        // =========================================================
+
+        public async Task<PresignedDownloadDto?> CreateDownloadUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var resource = await dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived)
+                .Select(resource => new
+                {
+                    resource.FileStorageKey,
+                    resource.OriginalFileName
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (resource is null ||
+                string.IsNullOrWhiteSpace(resource.FileStorageKey))
+            {
+                return null;
+            }
+
+            var fileExists = await fileStorageService.ObjectExistsAsync(
+                resource.FileStorageKey,
+                cancellationToken);
+
+            if (!fileExists)
+            {
+                return null;
+            }
+
+            return await fileStorageService.CreateDownloadUrlAsync(
+                resource.FileStorageKey,
+                resource.OriginalFileName,
+                cancellationToken);
+        }
+
+        // =========================================================
+        // ВАЛИДАЦИЯ НА R2 ОБЕКТИТЕ
+        // =========================================================
+
+        private async Task ValidateStoredFilesAsync(
+            string? fileStorageKey,
+            string? coverStorageKey,
+            CancellationToken cancellationToken)
+        {
+            await ValidateStorageObjectAsync(
+                fileStorageKey,
+                "Каченият учебен файл не беше намерен.",
+                cancellationToken);
+
+            await ValidateStorageObjectAsync(
+                coverStorageKey,
+                "Каченото изображение за корица не беше намерено.",
+                cancellationToken);
+        }
+
+        private async Task ValidateStorageObjectAsync(
+            string? storageKey,
+            string errorMessage,
+            CancellationToken cancellationToken)
+        {
+            /*
+             * null е позволено:
+             * - ExternalLink няма учебен файл;
+             * - корицата не е задължителна.
+             */
+            if (string.IsNullOrWhiteSpace(storageKey))
+            {
+                return;
+            }
+
+            var exists = await fileStorageService.ObjectExistsAsync(
+                storageKey.Trim(),
+                cancellationToken);
+
+            if (!exists)
+            {
+                throw new ValidationException(errorMessage);
+            }
+        }
+
+        // =========================================================
+        // ВАЛИДАЦИЯ: файл или външен URL
+        // =========================================================
+
+        private static void ValidateResourceLocation(
+            ResourceType type,
+            string? fileStorageKey,
+            string? externalUrl)
+        {
+            /*
+             * Провери дали стойността в твоя enum се казва точно
+             * ExternalLink. Ако е Link или ExternalUrl, промени името тук.
+             */
+            if (type == ResourceType.ExternalLink)
+            {
+                if (string.IsNullOrWhiteSpace(externalUrl))
+                {
+                    throw new ValidationException(
+                        "За външен ресурс трябва да бъде зададен URL адрес.");
+                }
+
+                if (!string.IsNullOrWhiteSpace(fileStorageKey))
+                {
+                    throw new ValidationException(
+                        "Външен ресурс не трябва да съдържа качен файл.");
+                }
+
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(fileStorageKey))
+            {
+                throw new ValidationException(
+                    "За този тип ресурс трябва да бъде качен файл.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(externalUrl))
+            {
+                throw new ValidationException(
+                    "Ресурсът не може едновременно да съдържа файл и външен URL адрес.");
+            }
+        }
+
+        // =========================================================
+        // ВАЛИДАЦИЯ: subject, category и audience
+        // =========================================================
 
         private async Task ValidateReferencesAsync(
             Guid subjectId,
@@ -331,10 +580,9 @@ namespace SchoolLibrary.Infrastructure.Services
                     "Трябва да бъде избран валиден предмет.");
             }
 
-            var subjectExists = await dbContext.Subjects
-                .AnyAsync(
-                    subject => subject.Id == subjectId,
-                    cancellationToken);
+            var subjectExists = await dbContext.Subjects.AnyAsync(
+                subject => subject.Id == subjectId,
+                cancellationToken);
 
             if (!subjectExists)
             {
@@ -348,10 +596,9 @@ namespace SchoolLibrary.Infrastructure.Services
                     "Трябва да бъде избрана валидна категория.");
             }
 
-            var categoryExists = await dbContext.Categories
-                .AnyAsync(
-                    category => category.Id == categoryId,
-                    cancellationToken);
+            var categoryExists = await dbContext.Categories.AnyAsync(
+                category => category.Id == categoryId,
+                cancellationToken);
 
             if (!categoryExists)
             {
@@ -426,15 +673,20 @@ namespace SchoolLibrary.Infrastructure.Services
                     break;
 
                 default:
-                    throw new ValidationException("Избраният тип аудитория е невалиден.");
+                    throw new ValidationException(
+                        "Избраният тип аудитория е невалиден.");
             }
         }
+
+        // =========================================================
+        // СЪЗДАВАНЕ НА ВРЪЗКИТЕ С АУДИТОРИЯТА
+        // =========================================================
 
         private static void AddAudienceRelations(
             Resource resource,
             ResourceAudienceType audienceType,
-            ICollection<int> gradeLevelIds,
-            ICollection<Guid> schoolClassIds)
+            IReadOnlyCollection<int> gradeLevelIds,
+            IReadOnlyCollection<Guid> schoolClassIds)
         {
             if (audienceType == ResourceAudienceType.GradeLevels)
             {
@@ -463,40 +715,9 @@ namespace SchoolLibrary.Infrastructure.Services
             }
         }
 
-        private static void ValidateResourceLocation(
-            ResourceType type,
-            string? filePath,
-            string? externalUrl)
-        {
-            if (type == ResourceType.ExternalLink)
-            {
-                if (string.IsNullOrWhiteSpace(externalUrl))
-                {
-                    throw new ValidationException(
-                        "За ресурс от тип външна връзка трябва да бъде зададен URL.");
-                }
-
-                if (!string.IsNullOrWhiteSpace(filePath))
-                {
-                    throw new ValidationException(
-                        "Ресурс от тип външна връзка не трябва да съдържа файл.");
-                }
-
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(filePath))
-            {
-                throw new ValidationException(
-                    "За този тип ресурс трябва да бъде зададен файл.");
-            }
-
-            if (!string.IsNullOrWhiteSpace(externalUrl))
-            {
-                throw new ValidationException(
-                    "Ресурсът не може едновременно да съдържа файл и външна връзка.");
-            }
-        }
+        // =========================================================
+        // НОРМАЛИЗИРАНЕ НА НЕЗАДЪЛЖИТЕЛНИ ТЕКСТОВЕ
+        // =========================================================
 
         private static string? NormalizeOptionalText(string? value)
         {

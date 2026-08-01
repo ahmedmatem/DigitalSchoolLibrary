@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SchoolLibrary.Application.Common.Models;
+using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 
@@ -17,7 +18,7 @@ namespace SchoolLibrary.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<PageResult<ResourceListDto>>> GetAll(
+        public async Task<ActionResult<PagedResult<ResourceListDto>>> GetAll(
             [FromQuery] ResourceQueryDto queryModel,
             CancellationToken cancellationToken)
         {
@@ -98,6 +99,32 @@ namespace SchoolLibrary.Api.Controllers
             }
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Generates a presigned URL for downloading a resource file.
+        /// Това връща краткотраен GET URL и самият файл се изтегля директно от R2.
+        /// Cloudflare препоръчва точно този поток за private client-side downloads.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        [HttpGet("{id:guid}/download")]
+        public async Task<ActionResult<PresignedDownloadDto>> Download(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .CreateDownloadUrlAsync(
+                    id,
+                    cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
         }
     }
 }

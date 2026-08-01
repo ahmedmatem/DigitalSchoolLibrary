@@ -29,17 +29,21 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .Property(r => r.Author)
                 .HasMaxLength(AuthorMaxLength);
 
-            builder
-                .Property(r => r.FilePath)
-                .HasMaxLength(FilePathMaxLength);
+            builder.Property(resource => resource.FileStorageKey)
+                .HasMaxLength(500);
+
+            builder.Property(resource => resource.OriginalFileName)
+                .HasMaxLength(255);
+
+            builder.Property(resource => resource.FileContentType)
+                .HasMaxLength(150);
+
+            builder.Property(resource => resource.CoverStorageKey)
+                .HasMaxLength(500);
 
             builder
                 .Property(r => r.ExternalUrl)
                 .HasMaxLength(2000);
-
-            builder
-                .Property(r => r.CoverImagePath)
-                .HasMaxLength(1000);
 
             builder
                 .Property(r => r.Type)
