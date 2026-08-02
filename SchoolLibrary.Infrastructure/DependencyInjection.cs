@@ -1,11 +1,14 @@
 ﻿using Amazon.Runtime;
 using Amazon.S3;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
+using SchoolLibrary.Infrastructure.Identity;
 using SchoolLibrary.Infrastructure.Services;
 using SchoolLibrary.Infrastructure.Storage;
 
@@ -23,6 +26,56 @@ namespace SchoolLibrary.Infrastructure
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
+
+            services
+                .AddIdentityCore<ApplicationUser>(options =>
+                {
+                    options.Password.RequiredLength = 6;
+                    options.Password.RequireDigit = true;
+                    options.Password.RequireUppercase = false;
+                    options.Password.RequireLowercase = true;
+                    options.Password.RequireNonAlphanumeric = false;
+
+                    options.User.RequireUniqueEmail = true;
+                })
+                .AddRoles<IdentityRole<Guid>>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddSignInManager()
+                .AddDefaultTokenProviders();
+
+            services
+                .AddAuthentication(IdentityConstants.ApplicationScheme)
+                .AddIdentityCookies();
+
+            services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = "SchoolLibrary.Auth";
+
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+                options.Cookie.SameSite = SameSiteMode.None;
+
+                options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+                options.SlidingExpiration = true;
+
+                options.Events.OnRedirectToLogin = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+
+                    return Task.CompletedTask;
+                };
+
+                options.Events.OnRedirectToAccessDenied = context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+
+                    return Task.CompletedTask;
+                };
+            });
+
+            services.AddAuthorization();
 
             services
                 .AddOptions<R2StorageOptions>()
