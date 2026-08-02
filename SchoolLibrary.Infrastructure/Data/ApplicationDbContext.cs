@@ -1,13 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Domain.Entities;
 using SchoolLibrary.Infrastructure.Data.Seed;
+using SchoolLibrary.Infrastructure.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace SchoolLibrary.Infrastructure.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext : IdentityDbContext<
+        ApplicationUser,
+        IdentityRole<Guid>,
+        Guid>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
