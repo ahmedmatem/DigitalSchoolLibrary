@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
 using SchoolLibrary.Infrastructure.Identity;
@@ -118,6 +119,7 @@ namespace SchoolLibrary.Infrastructure
             services.AddScoped<ILookupService, LookupService>();
             services.AddScoped<IResourceService, ResourceService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;
         }
