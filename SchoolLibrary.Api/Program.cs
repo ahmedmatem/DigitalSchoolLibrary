@@ -1,11 +1,12 @@
 using SchoolLibrary.Api.ExceptionHandling;
 using SchoolLibrary.Infrastructure;
+using SchoolLibrary.Infrastructure.Identity;
 
 namespace SchoolLibrary.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -31,10 +32,13 @@ namespace SchoolLibrary.Api
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 
             app.MapControllers();
+
+            await IdentitySeeder.SeedRolesAsync(app.Services);
 
             app.Run();
         }
