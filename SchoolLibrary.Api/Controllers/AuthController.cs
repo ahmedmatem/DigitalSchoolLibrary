@@ -8,6 +8,7 @@ namespace SchoolLibrary.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService authService;
@@ -51,7 +52,6 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
-        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
@@ -60,7 +60,6 @@ namespace SchoolLibrary.Api.Controllers
             return NoContent();
         }
 
-        [Authorize]
         [HttpGet("me")]
         public async Task<ActionResult<MeDto>> Me(
             CancellationToken cancellationToken)

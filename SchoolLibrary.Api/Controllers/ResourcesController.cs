@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
+using SchoolLibrary.Domain.Constants;
 
 namespace SchoolLibrary.Api.Controllers
 {
     [Route("api/resources")]
     [ApiController]
+    [Authorize]
     public class ResourcesController : ControllerBase
     {
         private readonly IResourceService resourceService;
@@ -45,6 +48,7 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(resource);
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
         [HttpPost]
         public async Task<ActionResult> Create(
             CreateResourceDto model,
@@ -55,6 +59,7 @@ namespace SchoolLibrary.Api.Controllers
             return CreatedAtAction(nameof(GetById), new { id }, new { id });
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
         [HttpPut("{id:guid}")]
         public async Task<ActionResult> Update(
             Guid id,
@@ -71,6 +76,7 @@ namespace SchoolLibrary.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
         [HttpPatch("{id:guid}/archive")]
         public async Task<ActionResult> Archive(
             Guid id,
@@ -86,6 +92,7 @@ namespace SchoolLibrary.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
         [HttpPatch("{id:guid}/restore")]
         public async Task<ActionResult> Restore(
             Guid id,

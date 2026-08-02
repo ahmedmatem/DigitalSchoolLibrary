@@ -1,11 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.Interfaces;
+using SchoolLibrary.Domain.Constants;
 
 namespace SchoolLibrary.Api.Controllers
 {
     [Route("api/files")]
     [ApiController]
+    [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
     public class FilesController : ControllerBase
     {
         private readonly IFileStorageService fileStorageService;
