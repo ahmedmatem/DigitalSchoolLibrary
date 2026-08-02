@@ -20,6 +20,18 @@ namespace SchoolLibrary.Api
 
             builder.Services.AddInfrastructure(builder.Configuration);
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AngularClient", policy =>
+                {
+                    policy
+                        .WithOrigins("http://localhost:4200")
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
             var app = builder.Build();
 
             app.UseExceptionHandler();
@@ -31,6 +43,8 @@ namespace SchoolLibrary.Api
             }
 
             app.UseHttpsRedirection();
+
+            app.UseCors("AngularClient");
 
             app.UseAuthentication();
             app.UseAuthorization();
