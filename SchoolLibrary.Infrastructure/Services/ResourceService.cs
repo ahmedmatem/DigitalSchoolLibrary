@@ -16,21 +16,23 @@ namespace SchoolLibrary.Infrastructure.Services
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IFileStorageService fileStorageService;
+        private readonly ICurrentUserService currentUserService;
 
         public ResourceService(
             ApplicationDbContext dbContext,
-            IFileStorageService fileStorageService)
+            IFileStorageService fileStorageService,
+            ICurrentUserService currentUserService)
         {
             this.dbContext = dbContext;
             this.fileStorageService = fileStorageService;
+            this.currentUserService = currentUserService;
         }
 
         // =========================================================
         // PUBLIC CATALOG
         // =========================================================
 
-        public async Task<PagedResult<PublicResourceListDto>>
-            GetPublicCatalogAsync(
+        public async Task<PagedResult<PublicResourceListDto>> GetPublicCatalogAsync(
                 ResourceQueryDto queryModel,
                 CancellationToken cancellationToken = default)
         {
@@ -150,6 +152,67 @@ namespace SchoolLibrary.Infrastructure.Services
                 coverStorageKey,
                 fileName: null,
                 cancellationToken);
+        }
+
+        // =========================================================
+        // PERSONALIZED CATALOG
+        // =========================================================
+
+        public async Task<PagedResult<PersonalResourceListDto>> GetForCurrentUserAsync(
+            ResourceQueryDto queryModel,
+            CancellationToken cancellationToken = default)
+        {
+            NormalizePagination(queryModel);
+
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource => !resource.IsArchived);
+
+            query = await ApplyCurrentUserAudienceFilterAsync(
+                query,
+                cancellationToken);
+
+            /*
+             * Прилагаме стандартните филтри:
+             * Search, SubjectId, CategoryId и Type.
+             */
+            query = ApplyCommonFilters(query, queryModel);
+
+            var totalCount = await query.CountAsync(
+                cancellationToken);
+
+            var items = await query
+                .OrderByDescending(resource => resource.CreatedAtUtc)
+                .ThenBy(resource => resource.Title)
+                .Skip((queryModel.Page - 1) * queryModel.PageSize)
+                .Take(queryModel.PageSize)
+                .Select(resource => new PersonalResourceListDto
+                {
+                    Id = resource.Id,
+                    Title = resource.Title,
+                    Author = resource.Author,
+                    Type = resource.Type,
+
+                    SubjectName = resource.Subject.Name,
+                    CategoryName = resource.Category.Name,
+
+                    AudienceType = resource.AudienceType,
+
+                    HasCover =
+                        resource.CoverStorageKey != null &&
+                        resource.CoverStorageKey != string.Empty,
+
+                    CreatedAtUtc = resource.CreatedAtUtc
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<PersonalResourceListDto>
+            {
+                Items = items,
+                Page = queryModel.Page,
+                PageSize = queryModel.PageSize,
+                TotalCount = totalCount
+            };
         }
 
         // =========================================================
@@ -536,36 +599,33 @@ namespace SchoolLibrary.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            /*
-             * На този етап endpoint-ът е защитен с [Authorize].
-             *
-             * В следващата стъпка тук ще добавим и проверка дали
-             * Student има достъп според GradeLevelId/SchoolClassId.
-             */
-            var resource = await dbContext.Resources
+            var query = dbContext.Resources
                 .AsNoTracking()
-                .Where(item =>
-                    item.Id == id &&
-                    !item.IsArchived)
-                .Select(item => new
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived);
+
+            query = await ApplyCurrentUserAudienceFilterAsync(
+                query,
+                cancellationToken);
+
+            var resource = await query
+                .Select(resource => new
                 {
-                    item.Type,
-                    item.FileStorageKey,
-                    item.OriginalFileName,
-                    item.ExternalUrl
+                    resource.FileStorageKey,
+                    resource.OriginalFileName
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (resource is null)
-            {
-                return null;
-            }
-
             /*
-             * Външният URL не се обслужва чрез Cloudflare R2.
-             * По-късно може да добавим отделен open endpoint.
+             * Тук null може да означава:
+             * - ресурсът не съществува;
+             * - архивиран е;
+             * - потребителят няма достъп;
+             * - ресурсът няма R2 файл.
              */
-            if (string.IsNullOrWhiteSpace(resource.FileStorageKey))
+            if (resource is null ||
+                string.IsNullOrWhiteSpace(resource.FileStorageKey))
             {
                 return null;
             }
@@ -971,6 +1031,80 @@ namespace SchoolLibrary.Infrastructure.Services
                         });
                 }
             }
+        }
+
+        private async Task<IQueryable<Resource>> ApplyCurrentUserAudienceFilterAsync(
+            IQueryable<Resource> query,
+            CancellationToken cancellationToken)
+        {
+            if (!currentUserService.IsAuthenticated ||
+                !currentUserService.UserId.HasValue)
+            {
+                return query.Where(resource => false);
+            }
+
+            /*
+             * Учителите и администраторите виждат
+             * всички неархивирани ресурси.
+             */
+            if (currentUserService.IsInRole(RoleConstants.Teacher) ||
+                currentUserService.IsInRole(RoleConstants.Admin))
+            {
+                return query;
+            }
+
+            /*
+             * Ако логнатият потребител не е Student,
+             * не му показваме ресурси.
+             */
+            if (!currentUserService.IsInRole(RoleConstants.Student))
+            {
+                return query.Where(resource => false);
+            }
+
+            var userId = currentUserService.UserId.Value;
+
+            var studentData = await dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new
+                {
+                    user.GradeLevelId,
+                    user.SchoolClassId
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (studentData is null)
+            {
+                return query.Where(resource => false);
+            }
+
+            var gradeLevelId = studentData.GradeLevelId;
+            var schoolClassId = studentData.SchoolClassId;
+
+            return query.Where(resource =>
+                resource.AudienceType ==
+                    ResourceAudienceType.AllStudents
+
+                || (
+                    resource.AudienceType ==
+                        ResourceAudienceType.GradeLevels
+                    && gradeLevelId.HasValue
+                    && resource.ResourceGradeLevels.Any(
+                        relation =>
+                            relation.GradeLevelId ==
+                            gradeLevelId.Value)
+                )
+
+                || (
+                    resource.AudienceType ==
+                        ResourceAudienceType.SchoolClasses
+                    && schoolClassId.HasValue
+                    && resource.ResourceSchoolClasses.Any(
+                        relation =>
+                            relation.SchoolClassId ==
+                            schoolClassId.Value)
+                ));
         }
 
         private static string? NormalizeOptionalText(string? value)

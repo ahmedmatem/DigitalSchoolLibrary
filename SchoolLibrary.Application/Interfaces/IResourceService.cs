@@ -23,6 +23,14 @@ namespace SchoolLibrary.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         // =========================================================
+        // PERSONALIZED CATALOG
+        // =========================================================
+
+        Task<PagedResult<PersonalResourceListDto>> GetForCurrentUserAsync(
+            ResourceQueryDto query,
+            CancellationToken cancellationToken = default);
+
+        // =========================================================
         // PROTECTED RESOURCE ACCESS
         // =========================================================
 

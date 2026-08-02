@@ -133,9 +133,6 @@ namespace SchoolLibrary.Api.Controllers
         /// Това връща краткотраен GET URL и самият файл се изтегля директно от R2.
         /// Cloudflare препоръчва точно този поток за private client-side downloads.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
         [Authorize]
         [HttpGet("{id:guid}/download")]
         public async Task<ActionResult<PresignedDownloadDto>> Download(
@@ -151,6 +148,20 @@ namespace SchoolLibrary.Api.Controllers
             {
                 return NotFound();
             }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpGet("for-me")]
+        public async Task<IActionResult> GetForMe(
+            [FromQuery] ResourceQueryDto query,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .GetForCurrentUserAsync(
+                    query,
+                    cancellationToken);
 
             return Ok(result);
         }
