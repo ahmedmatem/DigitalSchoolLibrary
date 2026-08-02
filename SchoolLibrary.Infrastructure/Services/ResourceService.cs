@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Application.Common.Exceptions;
+using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
+using SchoolLibrary.Domain.Constants;
 using SchoolLibrary.Domain.Entities;
 using SchoolLibrary.Domain.Enums;
 using SchoolLibrary.Infrastructure.Data;
@@ -14,13 +16,16 @@ namespace SchoolLibrary.Infrastructure.Services
     {
         private readonly ApplicationDbContext dbContext;
         private readonly IFileStorageService fileStorageService;
+        private readonly ICurrentUserService currentUserService;
 
         public ResourceService(
             ApplicationDbContext dbContext,
-            IFileStorageService fileStorageService)
+            IFileStorageService fileStorageService,
+            ICurrentUserService currentUserService)
         {
             this.dbContext = dbContext;
             this.fileStorageService = fileStorageService;
+            this.currentUserService = currentUserService;
         }
 
         // =========================================================
@@ -35,6 +40,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 .AsNoTracking()
                 .Where(resource => !resource.IsArchived)
                 .AsQueryable();
+
+            query = await ApplyAudienceFilterAsync(query, cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(queryModel.Search))
             {
@@ -130,11 +137,17 @@ namespace SchoolLibrary.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            return await dbContext.Resources
+            var query = dbContext.Resources
                 .AsNoTracking()
                 .Where(resource =>
                     resource.Id == id &&
-                    !resource.IsArchived)
+                    !resource.IsArchived);
+
+            query = await ApplyAudienceFilterAsync(
+                query,
+                cancellationToken);
+
+            return await query
                 .Select(resource => new ResourceDetailsDto
                 {
                     Id = resource.Id,
@@ -441,11 +454,17 @@ namespace SchoolLibrary.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
-            var resource = await dbContext.Resources
+            var query = dbContext.Resources
                 .AsNoTracking()
                 .Where(resource =>
                     resource.Id == id &&
-                    !resource.IsArchived)
+                    !resource.IsArchived);
+
+            query = await ApplyAudienceFilterAsync(
+                query,
+                cancellationToken);
+
+            var resource = await query
                 .Select(resource => new
                 {
                     resource.FileStorageKey,
@@ -724,6 +743,74 @@ namespace SchoolLibrary.Infrastructure.Services
             return string.IsNullOrWhiteSpace(value)
                 ? null
                 : value.Trim();
+        }
+
+        private async Task<IQueryable<Resource>> ApplyAudienceFilterAsync(
+            IQueryable<Resource> query,
+            CancellationToken cancellationToken)
+        {
+            if (!currentUserService.IsAuthenticated ||
+                !currentUserService.UserId.HasValue)
+            {
+                return query.Where(resource => false);
+            }
+
+            var isTeacher = currentUserService.IsInRole(RoleConstants.Teacher);
+
+            var isAdmin = currentUserService.IsInRole(RoleConstants.Admin);
+
+            /*
+             * Учителите и администраторите виждат
+             * всички неархивирани ресурси. За тях филтърът не се прилага.
+             */
+            if (isTeacher || isAdmin)
+            {
+                return query;
+            }
+
+            var userId = currentUserService.UserId.Value;
+
+            var studentData = await dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Id == userId)
+                .Select(user => new
+                {
+                    user.GradeLevelId,
+                    user.SchoolClassId
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (studentData is null)
+            {
+                return query.Where(resource => false);
+            }
+
+            var gradeLevelId = studentData.GradeLevelId;
+            var schoolClassId = studentData.SchoolClassId;
+
+            return query.Where(resource =>
+                resource.AudienceType ==
+                    ResourceAudienceType.AllStudents
+
+                || (
+                    resource.AudienceType ==
+                        ResourceAudienceType.GradeLevels
+                    && gradeLevelId.HasValue
+                    && resource.ResourceGradeLevels.Any(
+                        relation =>
+                            relation.GradeLevelId ==
+                            gradeLevelId.Value)
+                )
+
+                || (
+                    resource.AudienceType ==
+                        ResourceAudienceType.SchoolClasses
+                    && schoolClassId.HasValue
+                    && resource.ResourceSchoolClasses.Any(
+                        relation =>
+                            relation.SchoolClassId ==
+                            schoolClassId.Value)
+                ));
         }
     }
 }

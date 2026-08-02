@@ -10,7 +10,6 @@ namespace SchoolLibrary.Api.Controllers
 {
     [Route("api/resources")]
     [ApiController]
-    [Authorize]
     public class ResourcesController : ControllerBase
     {
         private readonly IResourceService resourceService;
@@ -20,6 +19,7 @@ namespace SchoolLibrary.Api.Controllers
             this.resourceService = resourceService;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<PagedResult<ResourceListDto>>> GetAll(
             [FromQuery] ResourceQueryDto queryModel,
@@ -32,6 +32,7 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<ResourceDetailsDto>> GetById(
             Guid id,
@@ -116,6 +117,7 @@ namespace SchoolLibrary.Api.Controllers
         /// <param name="id"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+        [Authorize]
         [HttpGet("{id:guid}/download")]
         public async Task<ActionResult<PresignedDownloadDto>> Download(
             Guid id,
