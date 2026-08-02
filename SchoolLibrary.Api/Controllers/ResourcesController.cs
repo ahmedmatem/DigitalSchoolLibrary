@@ -5,6 +5,7 @@ using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Domain.Constants;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SchoolLibrary.Api.Controllers
 {
@@ -21,32 +22,50 @@ namespace SchoolLibrary.Api.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<PagedResult<ResourceListDto>>> GetAll(
-            [FromQuery] ResourceQueryDto queryModel,
+        public async Task<IActionResult> GetAll(
+            [FromQuery] ResourceQueryDto query,
             CancellationToken cancellationToken)
         {
-            var result = await resourceService.GetAllAsync(
-                queryModel,
-                cancellationToken);
+            var result = await resourceService
+                .GetPublicCatalogAsync(
+                    query,
+                    cancellationToken);
 
             return Ok(result);
         }
 
         [AllowAnonymous]
         [HttpGet("{id:guid}")]
-        public async Task<ActionResult<ResourceDetailsDto>> GetById(
-            Guid id,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
         {
-            var resource = await resourceService
-                .GetByIdAsync(id, cancellationToken);
+            var result = await resourceService
+                .GetPublicDetailsAsync(
+                    id,
+                    cancellationToken);
 
-            if (resource is null)
+            if (result is null)
             {
                 return NotFound();
             }
 
-            return Ok(resource);
+            return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("{id:guid}/cover")]
+        public async Task<IActionResult> GetCover(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .CreatePublicCoverUrlAsync(
+                    id,
+                    cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
         }
 
         [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]

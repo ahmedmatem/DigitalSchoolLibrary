@@ -6,8 +6,36 @@ namespace SchoolLibrary.Application.Interfaces
 {
     public interface IResourceService
     {
+        // =========================================================
+        // PUBLIC CATALOG
+        // =========================================================
+
+        Task<PagedResult<PublicResourceListDto>> GetPublicCatalogAsync(
+            ResourceQueryDto query,
+            CancellationToken cancellationToken = default);
+
+        Task<PublicResourceDetailsDto?> GetPublicDetailsAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<PresignedDownloadDto?> CreatePublicCoverUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        // =========================================================
+        // PROTECTED RESOURCE ACCESS
+        // =========================================================
+
+        Task<PresignedDownloadDto?> CreateDownloadUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        // =========================================================
+        // RESOURCE MANAGEMENT
+        // =========================================================
+
         Task<PagedResult<ResourceListDto>> GetAllAsync(
-            ResourceQueryDto queryModel,
+            ResourceQueryDto query,
             CancellationToken cancellationToken = default);
 
         Task<ResourceDetailsDto?> GetByIdAsync(
@@ -28,10 +56,6 @@ namespace SchoolLibrary.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         Task<bool> RestoreAsync(
-            Guid id,
-            CancellationToken cancellationToken = default);
-
-        Task<PresignedDownloadDto?> CreateDownloadUrlAsync(
             Guid id,
             CancellationToken cancellationToken = default);
     }

@@ -10,7 +10,7 @@ namespace SchoolLibrary.Application.Interfaces
 
         Task<PresignedDownloadDto> CreateDownloadUrlAsync(
             string storageKey,
-            string? downloadFileName = null,
+            string? fileName = null,
             CancellationToken cancellationToken = default);
 
         Task<bool> ObjectExistsAsync(

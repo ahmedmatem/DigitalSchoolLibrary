@@ -19,6 +19,8 @@ namespace SchoolLibrary.Domain.Entities
 
         public ResourceAudienceType AudienceType { get; set; }
 
+        public bool IsPubliclyVisible { get; set; } = true;
+
         public string? FileStorageKey { get; set; }
 
         public string? OriginalFileName { get; set; }

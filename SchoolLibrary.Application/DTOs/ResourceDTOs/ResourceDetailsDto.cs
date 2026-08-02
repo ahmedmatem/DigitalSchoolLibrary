@@ -37,6 +37,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public ResourceAudienceType AudienceType { get; set; }
 
+        public bool IsPubliclyVisible { get; set; }
+
         public IReadOnlyCollection<int> GradeLevelIds { get; set; }
             = Array.Empty<int>();
 

@@ -29,6 +29,10 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .Property(r => r.Author)
                 .HasMaxLength(AuthorMaxLength);
 
+            builder.Property(resource => resource.IsPubliclyVisible)
+                .HasDefaultValue(true)
+                .IsRequired();
+
             builder.Property(resource => resource.FileStorageKey)
                 .HasMaxLength(500);
 

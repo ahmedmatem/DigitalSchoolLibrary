@@ -35,6 +35,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
             ErrorMessage = "Невалиден тип на ресурса.")]
         public ResourceType Type { get; set; }
 
+        public bool IsPubliclyVisible { get; set; } = true;
+
         [StringLength(500)]
         public string? FileStorageKey { get; set; }
 
