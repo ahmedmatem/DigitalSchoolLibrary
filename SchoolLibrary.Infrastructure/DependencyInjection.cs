@@ -117,6 +117,7 @@ namespace SchoolLibrary.Infrastructure
             services.AddScoped<IFileStorageService, R2FileStorageService>();
             services.AddScoped<ILookupService, LookupService>();
             services.AddScoped<IResourceService, ResourceService>();
+            services.AddScoped<IAuthService, AuthService>();
 
             return services;
         }
