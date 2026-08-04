@@ -33,6 +33,8 @@ namespace SchoolLibrary.Infrastructure.Data
 
         public DbSet<ResourceSchoolClass> ResourceSchoolClasses => Set<ResourceSchoolClass>();
 
+        public DbSet<SavedResource> SavedResources => Set<SavedResource>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
