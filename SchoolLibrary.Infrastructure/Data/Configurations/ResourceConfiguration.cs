@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SchoolLibrary.Domain.Entities;
+using SchoolLibrary.Infrastructure.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -74,6 +75,32 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .HasOne(r => r.Category)
                 .WithMany(c => c.Resources)
                 .HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Property(resource => resource.ModerationStatus)
+                .IsRequired();
+
+            builder.Property(resource => resource.SubmittedByUserId)
+                .IsRequired();
+
+            builder.Property(resource => resource.SubmittedAtUtc)
+                .IsRequired();
+
+            builder.Property(resource => resource.RejectionReason)
+                .HasMaxLength(1000);
+
+            builder.HasIndex(resource => resource.ModerationStatus);
+
+            builder.HasIndex(resource => resource.SubmittedByUserId);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(resource => resource.SubmittedByUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne<ApplicationUser>()
+                .WithMany()
+                .HasForeignKey(resource => resource.ReviewedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
