@@ -324,11 +324,9 @@ namespace SchoolLibrary.Infrastructure.Services
 
                     ModerationStatus = resource.ModerationStatus,
 
-                    SubmittedByUserId =
-                        resource.SubmittedByUserId,
+                    SubmittedByUserId = resource.SubmittedByUserId,
 
-                    SubmittedAtUtc =
-                        resource.SubmittedAtUtc,
+                    SubmittedAtUtc =  resource.SubmittedAtUtc,
 
                     ReviewedByUserId =
                         resource.ReviewedByUserId,

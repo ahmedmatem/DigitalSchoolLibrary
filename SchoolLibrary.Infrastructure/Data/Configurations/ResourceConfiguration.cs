@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SchoolLibrary.Domain.Entities;
+using SchoolLibrary.Domain.Enums;
 using SchoolLibrary.Infrastructure.Identity;
 using System;
 using System.Collections.Generic;
@@ -92,6 +93,8 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
             builder.HasIndex(resource => resource.ModerationStatus);
 
             builder.HasIndex(resource => resource.SubmittedByUserId);
+
+            builder.HasIndex(resource => resource.ReviewedByUserId);
 
             builder.HasOne<ApplicationUser>()
                 .WithMany()
