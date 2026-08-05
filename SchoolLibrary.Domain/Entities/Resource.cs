@@ -49,6 +49,18 @@ namespace SchoolLibrary.Domain.Entities
 
         public DateTime? ArchivedAtUtc { get; set; }
 
+        public ResourceModerationStatus ModerationStatus { get; set; }
+
+        public Guid SubmittedByUserId { get; set; }
+
+        public DateTime SubmittedAtUtc { get; set; }
+
+        public Guid? ReviewedByUserId { get; set; }
+
+        public DateTime? ReviewedAtUtc { get; set; }
+
+        public string? RejectionReason { get; set; }
+
         public ICollection<ResourceGradeLevel> ResourceGradeLevels { get; set; }
             = new HashSet<ResourceGradeLevel>();
 
