@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Amazon.Auth.AccessControlPolicy;
+using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
@@ -39,7 +40,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 .AsNoTracking()
                 .Where(savedResource =>
                     savedResource.UserId == userId &&
-                    !savedResource.Resource.IsArchived);
+                    !savedResource.Resource.IsArchived &&
+                    savedResource.Resource.ModerationStatus == ResourceModerationStatus.Approved);
 
             /*
              * Ако потребителят е ученик, не връщаме ресурс,
@@ -223,7 +225,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 .AsNoTracking()
                 .Where(resource =>
                     resource.Id == resourceId &&
-                    !resource.IsArchived);
+                    !resource.IsArchived &&
+                    resource.ModerationStatus == ResourceModerationStatus.Approved);
 
             /*
              * Teacher и Admin могат да запазват всички
