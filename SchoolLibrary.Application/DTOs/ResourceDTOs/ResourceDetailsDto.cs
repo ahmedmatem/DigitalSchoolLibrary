@@ -48,5 +48,17 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
         public DateTime CreatedAtUtc { get; set; }
 
         public DateTime? UpdatedAtUtc { get; set; }
+
+        public ResourceModerationStatus ModerationStatus { get; set; }
+
+        public Guid SubmittedByUserId { get; set; }
+
+        public DateTime SubmittedAtUtc { get; set; }
+
+        public Guid? ReviewedByUserId { get; set; }
+
+        public DateTime? ReviewedAtUtc { get; set; }
+
+        public string? RejectionReason { get; set; }
     }
 }
