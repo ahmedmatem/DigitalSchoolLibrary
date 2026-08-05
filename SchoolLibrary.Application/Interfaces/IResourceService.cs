@@ -39,6 +39,31 @@ namespace SchoolLibrary.Application.Interfaces
             CancellationToken cancellationToken = default);
 
         // =========================================================
+        // RESOURCE MODERATION
+        // =========================================================
+
+        Task<PagedResult<ModerationResourceDto>> GetPendingAsync(
+            ResourceQueryDto query,
+            CancellationToken cancellationToken = default);
+
+        Task<PagedResult<ModerationResourceDto>> GetMineAsync(
+            ResourceQueryDto query,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> ApproveAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> RejectAsync(
+            Guid id,
+            RejectResourceDto model,
+            CancellationToken cancellationToken = default);
+
+        Task<bool> ResubmitAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        // =========================================================
         // RESOURCE MANAGEMENT
         // =========================================================
 
