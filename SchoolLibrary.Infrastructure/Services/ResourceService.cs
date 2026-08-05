@@ -945,8 +945,7 @@ namespace SchoolLibrary.Infrastructure.Services
             var isAdmin =
                 currentUserService.IsInRole(RoleConstants.Admin);
 
-            if (!isAdmin &&
-                resource.SubmittedByUserId != currentUserId)
+            if (!isAdmin && resource.SubmittedByUserId != currentUserId)
             {
                 return false;
             }

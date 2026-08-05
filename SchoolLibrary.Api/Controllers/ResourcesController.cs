@@ -1,11 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Domain.Constants;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace SchoolLibrary.Api.Controllers
 {
@@ -49,6 +47,88 @@ namespace SchoolLibrary.Api.Controllers
             }
 
             return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
+        [HttpGet("mine")]
+        public async Task<IActionResult> GetMine(
+            [FromQuery] ResourceQueryDto query,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService.GetMineAsync(
+                query,
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpGet("pending")]
+        public async Task<IActionResult> GetPending(
+            [FromQuery] ResourceQueryDto query,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService.GetPendingAsync(
+                query,
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPost("{id:guid}/approve")]
+        public async Task<IActionResult> Approve(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var approved = await resourceService.ApproveAsync(
+                id,
+                cancellationToken);
+
+            if (!approved)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPost("{id:guid}/reject")]
+        public async Task<IActionResult> Reject(
+            Guid id,
+            [FromBody] RejectResourceDto model,
+            CancellationToken cancellationToken)
+        {
+            var rejected = await resourceService.RejectAsync(
+                id,
+                model,
+                cancellationToken);
+
+            if (!rejected)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
+        [HttpPost("{id:guid}/resubmit")]
+        public async Task<IActionResult> Resubmit(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var resubmitted = await resourceService.ResubmitAsync(
+                id,
+                cancellationToken);
+
+            if (!resubmitted)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
         }
 
         [AllowAnonymous]
