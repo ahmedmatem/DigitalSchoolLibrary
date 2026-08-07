@@ -699,6 +699,61 @@ namespace SchoolLibrary.Infrastructure.Services
         }
 
         // =========================================================
+        // MODERATION DOWNLOAD
+        // =========================================================
+
+        public async Task<PresignedDownloadDto?> CreateModerationDownloadUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            /*
+             * Допълнителна service-level защита.
+             * Controller-ът също ще бъде ограничен само за Admin.
+             */
+            if (!currentUserService.IsInRole(RoleConstants.Admin))
+            {
+                return null;
+            }
+
+            var resource = await dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived &&
+                    (
+                        resource.ModerationStatus == ResourceModerationStatus.Pending ||
+                        resource.ModerationStatus == ResourceModerationStatus.Rejected
+                    ))
+                .Select(resource => new
+                {
+                    resource.FileStorageKey,
+                    resource.OriginalFileName
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (resource is null ||
+                string.IsNullOrWhiteSpace(resource.FileStorageKey))
+            {
+                return null;
+            }
+
+            var fileExists = 
+                await fileStorageService.ObjectExistsAsync(
+                    resource.FileStorageKey,
+                    cancellationToken);
+
+            if (!fileExists)
+            {
+                return null;
+            }
+
+            return await fileStorageService.CreateDownloadUrlAsync(
+                resource.FileStorageKey,
+                resource.OriginalFileName,
+                cancellationToken);
+        }
+
+        // =========================================================
         // MODERATION - MY SUBMITTED RESOURCES
         // =========================================================
 
