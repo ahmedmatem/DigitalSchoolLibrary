@@ -95,5 +95,9 @@ namespace SchoolLibrary.Application.Interfaces
         Task<PresignedDownloadDto?> CreateModerationDownloadUrlAsync(
             Guid id,
             CancellationToken cancellationToken = default);
+
+        Task<PresignedDownloadDto?> CreateModerationCoverUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
     }
 }

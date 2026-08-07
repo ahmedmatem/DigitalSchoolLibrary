@@ -753,6 +753,50 @@ namespace SchoolLibrary.Infrastructure.Services
                 cancellationToken);
         }
 
+        public async Task<PresignedDownloadDto?> CreateModerationCoverUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            if (!currentUserService.IsInRole(RoleConstants.Admin))
+            {
+                return null;
+            }
+
+            var coverStorageKey = await dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived &&
+                    (
+                        resource.ModerationStatus == ResourceModerationStatus.Pending ||
+                        resource.ModerationStatus == ResourceModerationStatus.Rejected
+                    ) &&
+                    resource.CoverStorageKey != null &&
+                    resource.CoverStorageKey != string.Empty)
+                .Select(resource => resource.CoverStorageKey)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(coverStorageKey))
+            {
+                return null;
+            }
+
+            var exists =
+                await fileStorageService.ObjectExistsAsync(
+                    coverStorageKey,
+                    cancellationToken);
+
+            if (!exists)
+            {
+                return null;
+            }
+
+            return await fileStorageService.CreateDownloadUrlAsync(
+                coverStorageKey,
+                fileName: null,
+                cancellationToken);
+        }
+
         // =========================================================
         // MODERATION - MY SUBMITTED RESOURCES
         // =========================================================

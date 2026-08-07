@@ -193,7 +193,24 @@ namespace SchoolLibrary.Api.Controllers
             CancellationToken cancellationToken)
         {
             var result = await resourceService
-                .GetByIdAsync(
+                .GetByIdAsync( id, cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpGet("{id:guid}/moderation-cover")]
+        public async Task<IActionResult> ModerationCover(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .CreateModerationCoverUrlAsync(
                     id,
                     cancellationToken);
 
