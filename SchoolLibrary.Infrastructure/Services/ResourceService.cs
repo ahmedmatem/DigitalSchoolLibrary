@@ -1279,16 +1279,13 @@ namespace SchoolLibrary.Infrastructure.Services
             return query;
         }
 
-        private static IQueryable<Resource>
-            ApplyCommonFilters(
+        private static IQueryable<Resource> ApplyCommonFilters(
                 IQueryable<Resource> query,
                 ResourceQueryDto queryModel)
         {
-            if (!string.IsNullOrWhiteSpace(
-                    queryModel.Search))
+            if (!string.IsNullOrWhiteSpace(queryModel.Search))
             {
-                var searchTerm =
-                    queryModel.Search.Trim();
+                var searchTerm = queryModel.Search.Trim();
 
                 query = query.Where(resource =>
                     resource.Title.Contains(searchTerm) ||
@@ -1304,22 +1301,31 @@ namespace SchoolLibrary.Infrastructure.Services
             if (queryModel.SubjectId.HasValue)
             {
                 query = query.Where(resource =>
-                    resource.SubjectId ==
-                    queryModel.SubjectId.Value);
+                    resource.SubjectId == queryModel.SubjectId.Value);
             }
 
             if (queryModel.CategoryId.HasValue)
             {
                 query = query.Where(resource =>
-                    resource.CategoryId ==
-                    queryModel.CategoryId.Value);
+                    resource.CategoryId == queryModel.CategoryId.Value);
             }
 
             if (queryModel.Type.HasValue)
             {
                 query = query.Where(resource =>
-                    resource.Type ==
-                    queryModel.Type.Value);
+                    resource.Type == queryModel.Type.Value);
+            }
+
+            if (queryModel.GradeLevelId.HasValue)
+            {
+                var gradeLevelId = queryModel.GradeLevelId.Value;
+
+                query = query.Where(resource =>
+                    resource.AudienceType == ResourceAudienceType.AllStudents ||
+                    resource.ResourceGradeLevels.Any(
+                        relation => relation.GradeLevelId == gradeLevelId) ||
+                    resource.ResourceSchoolClasses.Any(
+                        relation => relation.SchoolClass.GradeLevelId == gradeLevelId));
             }
 
             return query;
