@@ -32,10 +32,9 @@ namespace SchoolLibrary.Infrastructure.Services
         // PUBLIC CATALOG
         // =========================================================
 
-        public async Task<PagedResult<PublicResourceListDto>>
-            GetPublicCatalogAsync(
-                ResourceQueryDto queryModel,
-                CancellationToken cancellationToken = default)
+        public async Task<PagedResult<PublicResourceListDto>> GetPublicCatalogAsync(
+            ResourceQueryDto queryModel,
+            CancellationToken cancellationToken = default)
         {
             NormalizePagination(queryModel);
 
@@ -49,12 +48,11 @@ namespace SchoolLibrary.Infrastructure.Services
 
             query = ApplyCommonFilters(query, queryModel);
 
-            var totalCount = await query.CountAsync(
-                cancellationToken);
+            var totalCount = await query.CountAsync(cancellationToken);
 
-            var items = await query
-                .OrderByDescending(resource => resource.CreatedAtUtc)
-                .ThenBy(resource => resource.Title)
+            var sortedQuery = ApplySorting(query, queryModel.Sort);
+
+            var items = await sortedQuery
                 .Skip((queryModel.Page - 1) * queryModel.PageSize)
                 .Take(queryModel.PageSize)
                 .Select(resource => new PublicResourceListDto
@@ -65,6 +63,7 @@ namespace SchoolLibrary.Infrastructure.Services
                     Type = resource.Type,
 
                     SubjectName = resource.Subject.Name,
+
                     CategoryName = resource.Category.Name,
 
                     HasCover =
@@ -1648,6 +1647,30 @@ namespace SchoolLibrary.Infrastructure.Services
             return string.IsNullOrWhiteSpace(value)
                 ? null
                 : value.Trim();
+        }
+
+        private static IOrderedQueryable<Resource> ApplySorting(
+            IQueryable<Resource> query,
+            ResourceSortOption sort)
+        {
+            return sort switch
+            {
+                ResourceSortOption.Oldest => query
+                        .OrderBy(resource => resource.CreatedAtUtc)
+                        .ThenBy(resource => resource.Title),
+
+                ResourceSortOption.TitleAscending => query
+                        .OrderBy(resource => resource.Title)
+                        .ThenByDescending(resource => resource.CreatedAtUtc),
+
+                ResourceSortOption.TitleDescending => query
+                        .OrderByDescending(resource => resource.Title)
+                        .ThenByDescending(resource => resource.CreatedAtUtc),
+
+                _ => query
+                        .OrderByDescending(resource => resource.CreatedAtUtc)
+                        .ThenBy(resource => resource.Title)
+            };
         }
     }
 }
