@@ -34,9 +34,9 @@ namespace SchoolLibrary.Application.Interfaces
         // PROTECTED RESOURCE ACCESS
         // =========================================================
 
-        Task<PresignedDownloadDto?> CreateDownloadUrlAsync(
+        Task<ResourceOpenDto?> GetOpenUrlAsync(
             Guid id,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken);
 
         // =========================================================
         // RESOURCE MODERATION

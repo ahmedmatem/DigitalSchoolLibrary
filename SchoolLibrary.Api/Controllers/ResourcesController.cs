@@ -141,15 +141,14 @@ namespace SchoolLibrary.Api.Controllers
         // =========================================================
 
         [Authorize]
-        [HttpGet("{id:guid}/download")]
-        public async Task<IActionResult> Download(
+        [HttpGet("{id:guid}/open")]
+        public async Task<IActionResult> Open(
             Guid id,
             CancellationToken cancellationToken)
         {
-            var result = await resourceService
-                .CreateDownloadUrlAsync(
-                    id,
-                    cancellationToken);
+            var result = await resourceService.GetOpenUrlAsync(
+                id,
+                cancellationToken);
 
             if (result is null)
             {

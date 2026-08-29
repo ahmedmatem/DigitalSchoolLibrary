@@ -116,7 +116,6 @@ namespace SchoolLibrary.Infrastructure.Services
                     RequiresAuthentication = true,
 
                     CreatedAtUtc = resource.CreatedAtUtc,
-                    ExternalUrl = resource.ExternalUrl
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
@@ -1111,18 +1110,16 @@ namespace SchoolLibrary.Infrastructure.Services
         // PROTECTED DOWNLOAD
         // =========================================================
 
-        public async Task<PresignedDownloadDto?>
-            CreateDownloadUrlAsync(
-                Guid id,
-                CancellationToken cancellationToken = default)
+        public async Task<ResourceOpenDto?> GetOpenUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
         {
             var query = dbContext.Resources
                 .AsNoTracking()
                 .Where(resource =>
                     resource.Id == id &&
                     !resource.IsArchived &&
-                    resource.ModerationStatus ==
-                        ResourceModerationStatus.Approved);
+                    resource.ModerationStatus == ResourceModerationStatus.Approved);
 
             query = await ApplyCurrentUserAudienceFilterAsync(
                 query,
@@ -1131,20 +1128,37 @@ namespace SchoolLibrary.Infrastructure.Services
             var resource = await query
                 .Select(resource => new
                 {
+                    resource.Type,
                     resource.FileStorageKey,
-                    resource.OriginalFileName
+                    resource.OriginalFileName,
+                    resource.ExternalUrl
                 })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (resource is null ||
-                string.IsNullOrWhiteSpace(
-                    resource.FileStorageKey))
+            if (resource is null)
             {
                 return null;
             }
 
-            var fileExists =
-                await fileStorageService.ObjectExistsAsync(
+            if (resource.Type == ResourceType.ExternalLink)
+            {
+                if (string.IsNullOrWhiteSpace(resource.ExternalUrl))
+                {
+                    return null;
+                }
+
+                return new ResourceOpenDto
+                {
+                    Url = resource.ExternalUrl
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(resource.FileStorageKey))
+            {
+                return null;
+            }
+
+            var fileExists = await fileStorageService.ObjectExistsAsync(
                     resource.FileStorageKey,
                     cancellationToken);
 
@@ -1153,10 +1167,15 @@ namespace SchoolLibrary.Infrastructure.Services
                 return null;
             }
 
-            return await fileStorageService.CreateDownloadUrlAsync(
-                resource.FileStorageKey,
-                resource.OriginalFileName,
-                cancellationToken);
+            var presignedDownload = await fileStorageService.CreateDownloadUrlAsync(
+                    resource.FileStorageKey,
+                    resource.OriginalFileName,
+                    cancellationToken);
+
+            return new ResourceOpenDto
+            {
+                Url = presignedDownload.DownloadUrl
+            };
         }
 
         // =========================================================
@@ -1673,5 +1692,7 @@ namespace SchoolLibrary.Infrastructure.Services
                         .ThenBy(resource => resource.Title)
             };
         }
+
+        
     }
 }
