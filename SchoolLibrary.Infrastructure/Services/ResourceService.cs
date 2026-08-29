@@ -115,7 +115,8 @@ namespace SchoolLibrary.Infrastructure.Services
 
                     RequiresAuthentication = true,
 
-                    CreatedAtUtc = resource.CreatedAtUtc
+                    CreatedAtUtc = resource.CreatedAtUtc,
+                    ExternalUrl = resource.ExternalUrl
                 })
                 .FirstOrDefaultAsync(cancellationToken);
         }
