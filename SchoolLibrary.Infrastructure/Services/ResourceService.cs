@@ -75,7 +75,7 @@ namespace SchoolLibrary.Infrastructure.Services
                         resource.CoverStorageKey != null &&
                         resource.CoverStorageKey != string.Empty,
 
-                    IsSved = 
+                    IsSaved = 
                         currentUserId.HasValue &&
                         dbContext.SavedResources.Any(savedResource =>
                             savedResource.UserId == currentUserId.Value &&
