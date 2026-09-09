@@ -18,6 +18,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public bool HasCover { get; set; }
 
+        public bool IsSved { get; set; }
+
         public DateTime CreatedAtUtc { get; set; }
     }
 }
