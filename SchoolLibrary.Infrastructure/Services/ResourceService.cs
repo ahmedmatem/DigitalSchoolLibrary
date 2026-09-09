@@ -94,41 +94,53 @@ namespace SchoolLibrary.Infrastructure.Services
             };
         }
 
-        public async Task<PublicResourceDetailsDto?>
-            GetPublicDetailsAsync(
+        public async Task<PublicResourceDetailsDto?> GetPublicDetailsAsync(
                 Guid id,
                 CancellationToken cancellationToken = default)
         {
-            return await dbContext.Resources
+            var resource = await dbContext.Resources
                 .AsNoTracking()
-                .Where(resource =>
-                    resource.Id == id &&
-                    !resource.IsArchived &&
-                    resource.IsPubliclyVisible &&
-                    resource.ModerationStatus ==
-                        ResourceModerationStatus.Approved)
-                .Select(resource => new PublicResourceDetailsDto
+                .Where(r => r.Id == id
+                    && !r.IsArchived
+                    && r.IsPubliclyVisible
+                    && r.ModerationStatus == ResourceModerationStatus.Approved)
+                .Select(r => new PublicResourceDetailsDto
                 {
-                    Id = resource.Id,
-                    Title = resource.Title,
-                    Description = resource.Description,
-                    Author = resource.Author,
-                    Type = resource.Type,
-
-                    SubjectName = resource.Subject.Name,
-                    CategoryName = resource.Category.Name,
-
-                    AudienceType = resource.AudienceType,
-
-                    HasCover =
-                        resource.CoverStorageKey != null &&
-                        resource.CoverStorageKey != string.Empty,
-
+                    Id = r.Id,
+                    Title = r.Title,
+                    Description = r.Description,
+                    Author = r.Author,
+                    Type = r.Type,
+                    SubjectName = r.Subject.Name,
+                    CategoryName = r.Category.Name,
+                    AudienceType = r.AudienceType,
+                    HasCover = r.CoverStorageKey != null,
                     RequiresAuthentication = true,
+                    CreatedAtUtc = r.CreatedAtUtc,
 
-                    CreatedAtUtc = resource.CreatedAtUtc,
+                    IsSaved = false
                 })
                 .FirstOrDefaultAsync(cancellationToken);
+
+            if (resource is null)
+            {
+                return null;
+            }
+
+            var userId = currentUserService.UserId;
+
+            if (userId is Guid userIdValue)
+            {
+                resource.IsSaved = await dbContext.SavedResources
+                    .AsNoTracking()
+                    .AnyAsync(
+                        sr =>
+                            sr.UserId == userIdValue &&
+                            sr.ResourceId == id,
+                        cancellationToken);
+            }
+
+            return resource;
         }
 
         public async Task<PresignedDownloadDto?>

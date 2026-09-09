@@ -25,5 +25,7 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
         public bool RequiresAuthentication { get; set; } = true;
 
         public DateTime CreatedAtUtc { get; set; }
+
+        public bool IsSaved { get; set; }
     }
 }
