@@ -38,6 +38,11 @@ namespace SchoolLibrary.Infrastructure.Services
         {
             NormalizePagination(queryModel);
 
+            // Get optional user Id in order to get information if the resource is saved or not for the user
+            var currentUserId = currentUserService.IsAuthenticated
+                ? currentUserService.UserId
+                : null;
+
             var query = dbContext.Resources
                 .AsNoTracking()
                 .Where(resource =>
@@ -69,6 +74,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     HasCover =
                         resource.CoverStorageKey != null &&
                         resource.CoverStorageKey != string.Empty,
+
+                    IsSved = 
+                        currentUserId.HasValue &&
+                        dbContext.SavedResources.Any(savedResource =>
+                            savedResource.UserId == currentUserId.Value &&
+                            savedResource.ResourceId == resource.Id),
 
                     CreatedAtUtc = resource.CreatedAtUtc
                 })
@@ -170,6 +181,8 @@ namespace SchoolLibrary.Infrastructure.Services
         {
             NormalizePagination(queryModel);
 
+            var currentUserId = GetRequiredCurrentUserId();
+
             var query = dbContext.Resources
                 .AsNoTracking()
                 .Where(resource =>
@@ -206,6 +219,10 @@ namespace SchoolLibrary.Infrastructure.Services
                     HasCover =
                         resource.CoverStorageKey != null &&
                         resource.CoverStorageKey != string.Empty,
+
+                    IsSaved = dbContext.SavedResources.Any(savedResource =>
+                        savedResource.UserId == currentUserId &&
+                        savedResource.ResourceId == resource.Id),
 
                     CreatedAtUtc = resource.CreatedAtUtc
                 })
