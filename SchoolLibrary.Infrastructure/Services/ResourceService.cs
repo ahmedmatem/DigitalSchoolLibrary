@@ -1729,6 +1729,45 @@ namespace SchoolLibrary.Infrastructure.Services
             };
         }
 
-        
+        public async Task<MyResourcesSummaryDto> 
+            GetMineSummaryAsync(CancellationToken cancellationToken = default)
+        {
+            var currentUserId = GetRequiredCurrentUserId();
+
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    !resource.IsArchived &&
+                    resource.SubmittedByUserId == currentUserId);
+
+            var total = await query.CountAsync(
+                cancellationToken);
+
+            var pending = await query.CountAsync(
+                resource =>
+                    resource.ModerationStatus ==
+                    ResourceModerationStatus.Pending,
+                cancellationToken);
+
+            var approved = await query.CountAsync(
+                resource =>
+                    resource.ModerationStatus ==
+                    ResourceModerationStatus.Approved,
+                cancellationToken);
+
+            var rejected = await query.CountAsync(
+                resource =>
+                    resource.ModerationStatus ==
+                    ResourceModerationStatus.Rejected,
+                cancellationToken);
+
+            return new MyResourcesSummaryDto
+            {
+                Total = total,
+                Pending = pending,
+                Approved = approved,
+                Rejected = rejected,
+            };
+        }
     }
 }

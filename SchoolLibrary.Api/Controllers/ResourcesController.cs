@@ -72,6 +72,15 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
+        [HttpGet("mine/summary")]
+        public async Task<IActionResult> GetMineSummary(CancellationToken cancellationToken)
+        {
+            var result = await resourceService.GetMineSummaryAsync(cancellationToken);
+
+            return Ok(result);
+        }
+
         // =========================================================
         // ADMIN - PENDING RESOURCES
         // =========================================================
