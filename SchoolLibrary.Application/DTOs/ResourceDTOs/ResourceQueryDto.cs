@@ -24,6 +24,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public ResourceAudienceType? AudienceType { get; set; }
 
+        public ResourceModerationStatus? ModerationStatus { get; set; }
+
         public ResourceSortOption Sort { get; set; } = ResourceSortOption.Newest;
 
         public int Page
