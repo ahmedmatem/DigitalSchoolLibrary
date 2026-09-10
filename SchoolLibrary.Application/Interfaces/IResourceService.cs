@@ -75,6 +75,14 @@ namespace SchoolLibrary.Application.Interfaces
             Guid id,
             CancellationToken cancellationToken = default);
 
+        Task<ResourceOpenDto?> GetManagementOpenUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
+        Task<PresignedDownloadDto?> CreateManagementCoverUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default);
+
         Task<Guid> CreateAsync(
             CreateResourceDto model,
             CancellationToken cancellationToken = default);
