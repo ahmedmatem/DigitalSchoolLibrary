@@ -380,6 +380,125 @@ namespace SchoolLibrary.Infrastructure.Services
         }
 
         // =========================================================
+        // MANAGEMENT FILE ACCESS
+        // =========================================================
+
+        public async Task<ResourceOpenDto?> GetManagementOpenUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var currentUserId = GetRequiredCurrentUserId();
+
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived);
+
+            if (!currentUserService.IsInRole(RoleConstants.Admin))
+            {
+                query = query.Where(resource =>
+                    resource.SubmittedByUserId == currentUserId);
+            }
+
+            var resource = await query
+                .Select(resource => new
+                {
+                    resource.Type,
+                    resource.FileStorageKey,
+                    resource.OriginalFileName,
+                    resource.ExternalUrl
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (resource is null)
+            {
+                return null;
+            }
+
+            if (resource.Type == ResourceType.ExternalLink)
+            {
+                if (string.IsNullOrWhiteSpace(resource.ExternalUrl))
+                {
+                    return null;
+                }
+
+                return new ResourceOpenDto
+                {
+                    Url = resource.ExternalUrl
+                };
+            }
+
+            if (string.IsNullOrWhiteSpace(resource.FileStorageKey))
+            {
+                return null;
+            }
+
+            var fileExists = await fileStorageService.ObjectExistsAsync(
+                resource.FileStorageKey,
+                cancellationToken);
+
+            if (!fileExists)
+            {
+                return null;
+            }
+
+            var download = await fileStorageService.CreateDownloadUrlAsync(
+                resource.FileStorageKey,
+                resource.OriginalFileName,
+                cancellationToken);
+
+            return new ResourceOpenDto
+            {
+                Url = download.DownloadUrl
+            };
+        }
+
+        public async Task<PresignedDownloadDto?> CreateManagementCoverUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            var currentUserId = GetRequiredCurrentUserId();
+
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource =>
+                    resource.Id == id &&
+                    !resource.IsArchived &&
+                    resource.CoverStorageKey != null &&
+                    resource.CoverStorageKey != string.Empty);
+
+            if (!currentUserService.IsInRole(RoleConstants.Admin))
+            {
+                query = query.Where(resource =>
+                    resource.SubmittedByUserId == currentUserId);
+            }
+
+            var coverStorageKey = await query
+                .Select(resource => resource.CoverStorageKey)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(coverStorageKey))
+            {
+                return null;
+            }
+
+            var coverExists = await fileStorageService.ObjectExistsAsync(
+                coverStorageKey,
+                cancellationToken);
+
+            if (!coverExists)
+            {
+                return null;
+            }
+
+            return await fileStorageService.CreateDownloadUrlAsync(
+                coverStorageKey,
+                fileName: null,
+                cancellationToken);
+        }
+
+        // =========================================================
         // CREATE
         // =========================================================
 
