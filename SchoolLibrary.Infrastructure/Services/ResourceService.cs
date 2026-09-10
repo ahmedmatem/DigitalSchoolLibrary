@@ -844,7 +844,7 @@ namespace SchoolLibrary.Infrastructure.Services
                     !resource.IsArchived &&
                     resource.SubmittedByUserId == currentUserId);
 
-            query = ApplyCommonFilters(query, queryModel);
+            query = ApplyManagementFilters(query, queryModel);
 
             var totalCount = await query.CountAsync(
                 cancellationToken);
@@ -1300,17 +1300,24 @@ namespace SchoolLibrary.Infrastructure.Services
                     queryModel.AudienceType.Value);
             }
 
-            if (queryModel.GradeLevelId.HasValue)
+            if (queryModel.ModerationStatus.HasValue)
             {
-                var gradeLevelId =
-                    queryModel.GradeLevelId.Value;
-
                 query = query.Where(resource =>
-                    resource.ResourceGradeLevels.Any(
-                        relation =>
-                            relation.GradeLevelId ==
-                            gradeLevelId));
+                    resource.ModerationStatus ==
+                    queryModel.ModerationStatus.Value);
             }
+
+            //if (queryModel.GradeLevelId.HasValue)
+            //{
+            //    var gradeLevelId =
+            //        queryModel.GradeLevelId.Value;
+
+            //    query = query.Where(resource =>
+            //        resource.ResourceGradeLevels.Any(
+            //            relation =>
+            //                relation.GradeLevelId ==
+            //                gradeLevelId));
+            //}
 
             if (queryModel.SchoolClassId.HasValue)
             {
