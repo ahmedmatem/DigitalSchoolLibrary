@@ -211,6 +211,44 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
+        [HttpGet("{id:guid}/manage-open")]
+        public async Task<IActionResult> OpenForManagement(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .GetManagementOpenUrlAsync(
+                    id,
+                    cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
+        [HttpGet("{id:guid}/manage-cover")]
+        public async Task<IActionResult> CoverForManagement(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .CreateManagementCoverUrlAsync(
+                    id,
+                    cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpGet("{id:guid}/moderation-cover")]
         public async Task<IActionResult> ModerationCover(
