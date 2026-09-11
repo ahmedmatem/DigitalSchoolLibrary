@@ -53,6 +53,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public Guid SubmittedByUserId { get; set; }
 
+        public string SubmittedByName { get; set; } = string.Empty;
+
         public DateTime SubmittedAtUtc { get; set; }
 
         public Guid? ReviewedByUserId { get; set; }

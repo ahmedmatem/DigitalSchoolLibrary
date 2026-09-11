@@ -46,6 +46,13 @@ namespace SchoolLibrary.Application.Interfaces
             ResourceQueryDto query,
             CancellationToken cancellationToken = default);
 
+        Task<PagedResult<ModerationResourceDto>> GetModerationAsync(
+            ResourceQueryDto query,
+            CancellationToken cancellationToken = default);
+
+        Task<MyResourcesSummaryDto> GetModerationSummaryAsync(
+            CancellationToken cancellationToken = default);
+
         Task<PagedResult<ModerationResourceDto>> GetMineAsync(
             ResourceQueryDto query,
             CancellationToken cancellationToken = default);

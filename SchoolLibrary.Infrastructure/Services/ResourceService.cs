@@ -354,6 +354,11 @@ namespace SchoolLibrary.Infrastructure.Services
 
                     SubmittedByUserId = resource.SubmittedByUserId,
 
+                    SubmittedByName = dbContext.Users
+                        .Where(user => user.Id == resource.SubmittedByUserId)
+                        .Select(user => user.FirstName + " " + user.LastName)
+                        .FirstOrDefault() ?? string.Empty,
+
                     SubmittedAtUtc =  resource.SubmittedAtUtc,
 
                     ReviewedByUserId =
@@ -842,6 +847,82 @@ namespace SchoolLibrary.Infrastructure.Services
                 Page = queryModel.Page,
                 PageSize = queryModel.PageSize,
                 TotalCount = totalCount
+            };
+        }
+
+        public async Task<PagedResult<ModerationResourceDto>>
+            GetModerationAsync(
+                ResourceQueryDto queryModel,
+                CancellationToken cancellationToken = default)
+        {
+            NormalizePagination(queryModel);
+
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource => !resource.IsArchived);
+
+            query = ApplyManagementFilters(query, queryModel);
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var sortedQuery = ApplySorting(query, queryModel.Sort);
+
+            var items = await sortedQuery
+                .Skip((queryModel.Page - 1) * queryModel.PageSize)
+                .Take(queryModel.PageSize)
+                .Select(resource => new ModerationResourceDto
+                {
+                    Id = resource.Id,
+                    Title = resource.Title,
+                    Description = resource.Description,
+                    Author = resource.Author,
+                    Type = resource.Type,
+                    SubjectName = resource.Subject.Name,
+                    CategoryName = resource.Category.Name,
+                    AudienceType = resource.AudienceType,
+                    ModerationStatus = resource.ModerationStatus,
+                    HasFile = !string.IsNullOrEmpty(resource.FileStorageKey),
+                    HasCover = !string.IsNullOrEmpty(resource.CoverStorageKey),
+                    ExternalUrl = resource.ExternalUrl,
+                    SubmittedByUserId = resource.SubmittedByUserId,
+                    SubmittedByName = dbContext.Users
+                        .Where(user => user.Id == resource.SubmittedByUserId)
+                        .Select(user => user.FirstName + " " + user.LastName)
+                        .FirstOrDefault() ?? string.Empty,
+                    SubmittedAtUtc = resource.SubmittedAtUtc,
+                    ReviewedByUserId = resource.ReviewedByUserId,
+                    ReviewedAtUtc = resource.ReviewedAtUtc,
+                    RejectionReason = resource.RejectionReason
+                })
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<ModerationResourceDto>
+            {
+                Items = items,
+                Page = queryModel.Page,
+                PageSize = queryModel.PageSize,
+                TotalCount = totalCount
+            };
+        }
+
+        public async Task<MyResourcesSummaryDto> GetModerationSummaryAsync(
+            CancellationToken cancellationToken = default)
+        {
+            var query = dbContext.Resources
+                .AsNoTracking()
+                .Where(resource => !resource.IsArchived);
+
+            return new MyResourcesSummaryDto
+            {
+                Total = await query.CountAsync(cancellationToken),
+                Pending = await query.CountAsync(resource =>
+                    resource.ModerationStatus == ResourceModerationStatus.Pending,
+                    cancellationToken),
+                Approved = await query.CountAsync(resource =>
+                    resource.ModerationStatus == ResourceModerationStatus.Approved,
+                    cancellationToken),
+                Rejected = await query.CountAsync(resource =>
+                    resource.ModerationStatus == ResourceModerationStatus.Rejected,
+                    cancellationToken)
             };
         }
 
@@ -1453,7 +1534,7 @@ namespace SchoolLibrary.Infrastructure.Services
             return query;
         }
 
-        private static IQueryable<Resource> ApplyCommonFilters(
+        private IQueryable<Resource> ApplyCommonFilters(
                 IQueryable<Resource> query,
                 ResourceQueryDto queryModel)
         {
@@ -1469,7 +1550,11 @@ namespace SchoolLibrary.Infrastructure.Services
                         resource.Author.Contains(searchTerm)
                     ) ||
                     resource.Subject.Name.Contains(searchTerm) ||
-                    resource.Category.Name.Contains(searchTerm));
+                    resource.Category.Name.Contains(searchTerm) ||
+                    dbContext.Users.Any(user =>
+                        user.Id == resource.SubmittedByUserId &&
+                        (user.FirstName + " " + user.LastName)
+                            .Contains(searchTerm)));
             }
 
             if (queryModel.SubjectId.HasValue)

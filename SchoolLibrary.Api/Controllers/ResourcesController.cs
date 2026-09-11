@@ -99,6 +99,30 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpGet("moderation")]
+        public async Task<IActionResult> GetModeration(
+            [FromQuery] ResourceQueryDto query,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService.GetModerationAsync(
+                query,
+                cancellationToken);
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpGet("moderation/summary")]
+        public async Task<IActionResult> GetModerationSummary(
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService.GetModerationSummaryAsync(
+                cancellationToken);
+
+            return Ok(result);
+        }
+
         // =========================================================
         // PUBLIC DETAILS
         // =========================================================
