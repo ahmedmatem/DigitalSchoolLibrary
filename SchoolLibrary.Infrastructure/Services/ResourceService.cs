@@ -1486,7 +1486,7 @@ namespace SchoolLibrary.Infrastructure.Services
         // FILTERS
         // =========================================================
 
-        private static IQueryable<Resource>
+        private IQueryable<Resource>
             ApplyManagementFilters(
                 IQueryable<Resource> query,
                 ResourceQueryDto queryModel)
