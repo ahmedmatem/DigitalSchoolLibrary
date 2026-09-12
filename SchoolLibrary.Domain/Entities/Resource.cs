@@ -51,9 +51,9 @@ namespace SchoolLibrary.Domain.Entities
 
         public ResourceModerationStatus ModerationStatus { get; set; }
 
-        public Guid SubmittedByUserId { get; set; }
+        public Guid? SubmittedByUserId { get; set; }
 
-        public DateTime SubmittedAtUtc { get; set; }
+        public DateTime? SubmittedAtUtc { get; set; }
 
         public Guid? ReviewedByUserId { get; set; }
 
