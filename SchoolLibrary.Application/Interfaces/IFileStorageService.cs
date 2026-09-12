@@ -6,7 +6,8 @@ namespace SchoolLibrary.Application.Interfaces
     {
         Task<PresignedUploadDto> CreateUploadUrlAsync(
             CreateUploadUrlDto model,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            bool forceDownload = true);
 
         Task<PresignedDownloadDto> CreateDownloadUrlAsync(
             string storageKey,
