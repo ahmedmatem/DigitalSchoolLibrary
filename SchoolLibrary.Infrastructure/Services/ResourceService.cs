@@ -352,14 +352,16 @@ namespace SchoolLibrary.Infrastructure.Services
 
                     ModerationStatus = resource.ModerationStatus,
 
-                    SubmittedByUserId = resource.SubmittedByUserId,
+                    SubmittedByUserId =
+                        resource.SubmittedByUserId ?? Guid.Empty,
 
                     SubmittedByName = dbContext.Users
                         .Where(user => user.Id == resource.SubmittedByUserId)
                         .Select(user => user.FirstName + " " + user.LastName)
                         .FirstOrDefault() ?? string.Empty,
 
-                    SubmittedAtUtc =  resource.SubmittedAtUtc,
+                    SubmittedAtUtc =
+                        resource.SubmittedAtUtc ?? resource.CreatedAtUtc,
 
                     ReviewedByUserId =
                         resource.ReviewedByUserId,
@@ -825,10 +827,10 @@ namespace SchoolLibrary.Infrastructure.Services
                     ExternalUrl = resource.ExternalUrl,
 
                     SubmittedByUserId =
-                        resource.SubmittedByUserId,
+                        resource.SubmittedByUserId ?? Guid.Empty,
 
                     SubmittedAtUtc =
-                        resource.SubmittedAtUtc,
+                        resource.SubmittedAtUtc ?? resource.CreatedAtUtc,
 
                     ReviewedByUserId =
                         resource.ReviewedByUserId,
@@ -883,12 +885,14 @@ namespace SchoolLibrary.Infrastructure.Services
                     HasFile = !string.IsNullOrEmpty(resource.FileStorageKey),
                     HasCover = !string.IsNullOrEmpty(resource.CoverStorageKey),
                     ExternalUrl = resource.ExternalUrl,
-                    SubmittedByUserId = resource.SubmittedByUserId,
+                    SubmittedByUserId =
+                        resource.SubmittedByUserId ?? Guid.Empty,
                     SubmittedByName = dbContext.Users
                         .Where(user => user.Id == resource.SubmittedByUserId)
                         .Select(user => user.FirstName + " " + user.LastName)
                         .FirstOrDefault() ?? string.Empty,
-                    SubmittedAtUtc = resource.SubmittedAtUtc,
+                    SubmittedAtUtc =
+                        resource.SubmittedAtUtc ?? resource.CreatedAtUtc,
                     ReviewedByUserId = resource.ReviewedByUserId,
                     ReviewedAtUtc = resource.ReviewedAtUtc,
                     RejectionReason = resource.RejectionReason
@@ -1079,10 +1083,10 @@ namespace SchoolLibrary.Infrastructure.Services
                     ExternalUrl = resource.ExternalUrl,
 
                     SubmittedByUserId =
-                        resource.SubmittedByUserId,
+                        resource.SubmittedByUserId ?? Guid.Empty,
 
                     SubmittedAtUtc =
-                        resource.SubmittedAtUtc,
+                        resource.SubmittedAtUtc ?? resource.CreatedAtUtc,
 
                     ReviewedByUserId =
                         resource.ReviewedByUserId,
