@@ -938,6 +938,27 @@ namespace SchoolLibrary.Infrastructure.Services
             Guid id,
             CancellationToken cancellationToken = default)
         {
+            return await CreateModerationFileUrlAsync(
+                id,
+                forceDownload: true,
+                cancellationToken: cancellationToken);
+        }
+
+        public async Task<PresignedDownloadDto?> CreateModerationPreviewUrlAsync(
+            Guid id,
+            CancellationToken cancellationToken = default)
+        {
+            return await CreateModerationFileUrlAsync(
+                id,
+                forceDownload: false,
+                cancellationToken: cancellationToken);
+        }
+
+        private async Task<PresignedDownloadDto?> CreateModerationFileUrlAsync(
+            Guid id,
+            bool forceDownload,
+            CancellationToken cancellationToken)
+        {
             /*
              * Допълнителна service-level защита.
              * Controller-ът също ще бъде ограничен само за Admin.
@@ -951,11 +972,7 @@ namespace SchoolLibrary.Infrastructure.Services
                 .AsNoTracking()
                 .Where(resource =>
                     resource.Id == id &&
-                    !resource.IsArchived &&
-                    (
-                        resource.ModerationStatus == ResourceModerationStatus.Pending ||
-                        resource.ModerationStatus == ResourceModerationStatus.Rejected
-                    ))
+                    !resource.IsArchived)
                 .Select(resource => new
                 {
                     resource.FileStorageKey,
@@ -982,7 +999,8 @@ namespace SchoolLibrary.Infrastructure.Services
             return await fileStorageService.CreateDownloadUrlAsync(
                 resource.FileStorageKey,
                 resource.OriginalFileName,
-                cancellationToken);
+                cancellationToken,
+                forceDownload);
         }
 
         public async Task<PresignedDownloadDto?> CreateModerationCoverUrlAsync(
