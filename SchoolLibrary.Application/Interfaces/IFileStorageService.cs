@@ -6,13 +6,13 @@ namespace SchoolLibrary.Application.Interfaces
     {
         Task<PresignedUploadDto> CreateUploadUrlAsync(
             CreateUploadUrlDto model,
-            CancellationToken cancellationToken = default,
-            bool forceDownload = true);
+            CancellationToken cancellationToken = default);
 
         Task<PresignedDownloadDto> CreateDownloadUrlAsync(
             string storageKey,
             string? fileName = null,
-            CancellationToken cancellationToken = default);
+            CancellationToken cancellationToken = default,
+            bool forceDownload = true);
 
         Task<bool> ObjectExistsAsync(
             string storageKey,
