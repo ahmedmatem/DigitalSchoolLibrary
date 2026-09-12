@@ -196,6 +196,25 @@ namespace SchoolLibrary.Api.Controllers
         // =========================================================
 
         [Authorize(Roles = RoleConstants.Admin)]
+        [HttpGet("{id:guid}/moderation-preview")]
+        public async Task<IActionResult> ModerationPreview(
+            Guid id,
+            CancellationToken cancellationToken)
+        {
+            var result = await resourceService
+                .CreateModerationPreviewUrlAsync(
+                    id,
+                    cancellationToken);
+
+            if (result is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpGet("{id:guid}/moderation-download")]
         public async Task<IActionResult> ModerationDownload(
             Guid id,
