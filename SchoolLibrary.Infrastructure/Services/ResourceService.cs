@@ -1403,7 +1403,8 @@ namespace SchoolLibrary.Infrastructure.Services
             var presignedDownload = await fileStorageService.CreateDownloadUrlAsync(
                     resource.FileStorageKey,
                     resource.OriginalFileName,
-                    cancellationToken);
+                    cancellationToken,
+                    forceDownload: false);
 
             return new ResourceOpenDto
             {
