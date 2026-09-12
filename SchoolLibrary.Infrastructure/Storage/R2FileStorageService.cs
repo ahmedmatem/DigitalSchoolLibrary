@@ -87,7 +87,8 @@ namespace SchoolLibrary.Infrastructure.Storage
         public Task<PresignedDownloadDto> CreateDownloadUrlAsync(
             string storageKey,
             string? downloadFileName = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            bool forceDownload = true)
         {
             if (string.IsNullOrWhiteSpace(storageKey))
             {
@@ -112,7 +113,8 @@ namespace SchoolLibrary.Infrastructure.Storage
                 request.ResponseHeaderOverrides =
                     new ResponseHeaderOverrides
                     {
-                        ContentDisposition = $"attachment; filename=\"{safeName}\""
+                        ContentDisposition =
+                            $"{(forceDownload ? "attachment" : "inline")}; filename=\"{safeName}\""
                     };
             }
 
