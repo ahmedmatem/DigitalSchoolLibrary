@@ -81,12 +81,6 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
             builder.Property(resource => resource.ModerationStatus)
                 .IsRequired();
 
-            builder.Property(resource => resource.SubmittedByUserId)
-                .IsRequired();
-
-            builder.Property(resource => resource.SubmittedAtUtc)
-                .IsRequired();
-
             builder.Property(resource => resource.RejectionReason)
                 .HasMaxLength(1000);
 
