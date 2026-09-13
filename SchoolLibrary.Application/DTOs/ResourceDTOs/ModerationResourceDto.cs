@@ -1,4 +1,4 @@
-﻿using SchoolLibrary.Domain.Enums;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 {
@@ -12,9 +12,11 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public string? Author { get; set; }
 
+        public ResourceCollectionType CollectionType { get; set; }
+
         public ResourceType Type { get; set; }
 
-        public string SubjectName { get; set; } = string.Empty;
+        public string? SubjectName { get; set; }
 
         public string CategoryName { get; set; } = string.Empty;
 
