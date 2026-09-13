@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SchoolLibrary.Domain.Entities;
 using SchoolLibrary.Domain.Enums;
@@ -52,6 +52,13 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .HasMaxLength(2000);
 
             builder
+                .Property(r => r.CollectionType)
+                .HasDefaultValue(ResourceCollectionType.EducationalResources)
+                .IsRequired();
+
+            builder.HasIndex(r => r.CollectionType);
+
+            builder
                 .Property(r => r.Type)
                 .IsRequired();
 
@@ -99,6 +106,19 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .WithMany()
                 .HasForeignKey(resource => resource.ReviewedByUserId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.ToTable(table =>
+            {
+                table.HasCheckConstraint(
+                    "CK_Resources_CollectionSubject",
+                    "([CollectionType] = 1 AND [SubjectId] IS NOT NULL) OR " +
+                    "([CollectionType] = 2 AND [SubjectId] IS NULL)");
+
+                table.HasCheckConstraint(
+                    "CK_Resources_ELibraryVisibility",
+                    "[CollectionType] <> 2 OR " +
+                    "([AudienceType] = 1 AND [IsPubliclyVisible] = 1)");
+            });
         }
     }
 }
