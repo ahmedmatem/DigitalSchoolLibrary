@@ -453,7 +453,8 @@ namespace SchoolLibrary.Infrastructure.Services
             var download = await fileStorageService.CreateDownloadUrlAsync(
                 resource.FileStorageKey,
                 resource.OriginalFileName,
-                cancellationToken);
+                cancellationToken,
+                forceDownload: false);
 
             return new ResourceOpenDto
             {
