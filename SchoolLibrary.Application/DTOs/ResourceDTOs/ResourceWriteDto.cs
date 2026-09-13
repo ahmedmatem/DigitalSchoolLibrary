@@ -1,9 +1,6 @@
-﻿using SchoolLibrary.Domain.Constants;
+using SchoolLibrary.Domain.Constants;
 using SchoolLibrary.Domain.Enums;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 
 namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 {
@@ -11,10 +8,10 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
     {
         [Required(ErrorMessage = "Заглавието е задължително.")]
         [StringLength(
-        ResourceConstants.TitleMaxLength,
-        MinimumLength = ResourceConstants.TitleMinLength,
-        ErrorMessage =
-            "Заглавието трябва да бъде между {2} и {1} символа.")]
+            ResourceConstants.TitleMaxLength,
+            MinimumLength = ResourceConstants.TitleMinLength,
+            ErrorMessage =
+                "Заглавието трябва да бъде между {2} и {1} символа.")]
         public string Title { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Описанието е задължително.")]
@@ -29,6 +26,11 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
             ResourceConstants.AuthorMaxLength,
             ErrorMessage = "Името на автора може да съдържа до {1} символа.")]
         public string? Author { get; set; }
+
+        [EnumDataType(
+            typeof(ResourceCollectionType),
+            ErrorMessage = "Невалидна секция на ресурса.")]
+        public ResourceCollectionType CollectionType { get; set; }
 
         [EnumDataType(
             typeof(ResourceType),
@@ -58,8 +60,7 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
         [Url(ErrorMessage = "Въведеният външен адрес не е валиден URL.")]
         public string? ExternalUrl { get; set; }
 
-        [Required(ErrorMessage = "Трябва да бъде избран предмет.")]
-        public Guid SubjectId { get; set; }
+        public Guid? SubjectId { get; set; }
 
         [Required(ErrorMessage = "Трябва да бъде избрана категория.")]
         public Guid CategoryId { get; set; }
