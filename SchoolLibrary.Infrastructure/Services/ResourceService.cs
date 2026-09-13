@@ -664,7 +664,9 @@ namespace SchoolLibrary.Infrastructure.Services
                     resource.ModerationStatus ==
                         ResourceModerationStatus.Pending ||
                     resource.ModerationStatus ==
-                        ResourceModerationStatus.Rejected;
+                        ResourceModerationStatus.Rejected ||
+                    resource.ModerationStatus ==
+                        ResourceModerationStatus.Approved;
 
                 if (!isTeacher ||
                     !isOwner ||
@@ -759,7 +761,22 @@ namespace SchoolLibrary.Infrastructure.Services
             resource.SubjectId = model.SubjectId;
             resource.CategoryId = model.CategoryId;
 
-            resource.UpdatedAtUtc = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+
+            resource.UpdatedAtUtc = now;
+
+            if (!isAdmin &&
+                resource.ModerationStatus ==
+                    ResourceModerationStatus.Approved)
+            {
+                resource.ModerationStatus =
+                    ResourceModerationStatus.Pending;
+
+                resource.SubmittedAtUtc = now;
+                resource.ReviewedByUserId = null;
+                resource.ReviewedAtUtc = null;
+                resource.RejectionReason = null;
+            }
 
             resource.ResourceGradeLevels.Clear();
             resource.ResourceSchoolClasses.Clear();
@@ -1193,7 +1210,9 @@ namespace SchoolLibrary.Infrastructure.Services
             }
 
             if (resource.ModerationStatus !=
-                ResourceModerationStatus.Pending)
+                    ResourceModerationStatus.Pending &&
+                resource.ModerationStatus !=
+                    ResourceModerationStatus.Approved)
             {
                 return false;
             }
