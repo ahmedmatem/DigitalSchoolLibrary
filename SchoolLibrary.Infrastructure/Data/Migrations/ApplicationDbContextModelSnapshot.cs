@@ -159,15 +159,15 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<int>("CollectionType")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(1);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -221,27 +221,39 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000001"), CollectionType = 2, Name = "Художествена литература"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000001"),
+                            CollectionType = 2,
+                            Name = "Художествена литература"
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000002"), CollectionType = 2, Name = "Поезия"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000002"),
+                            CollectionType = 2,
+                            Name = "Поезия"
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000003"), CollectionType = 2, Name = "Статии и публикации"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000003"),
+                            CollectionType = 2,
+                            Name = "Статии и публикации"
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000004"), CollectionType = 2, Name = "Научнопопулярна литература"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000004"),
+                            CollectionType = 2,
+                            Name = "Научнопопулярна литература"
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000005"), CollectionType = 2, Name = "Списания"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000005"),
+                            CollectionType = 2,
+                            Name = "Списания"
                         },
                         new
                         {
-                            Id = new Guid("e1000000-0000-0000-0000-000000000006"), CollectionType = 2, Name = "Справочна литература"
+                            Id = new Guid("e1000000-0000-0000-0000-000000000006"),
+                            CollectionType = 2,
+                            Name = "Справочна литература"
                         });
                 });
 
@@ -371,9 +383,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<int>("ModerationStatus")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(2);
+                        .HasColumnType("int");
 
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(255)
