@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Application.Common.Exceptions;
 using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Common.Models;
@@ -65,9 +65,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     Id = resource.Id,
                     Title = resource.Title,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
 
                     CategoryName = resource.Category.Name,
 
@@ -110,8 +113,11 @@ namespace SchoolLibrary.Infrastructure.Services
                     Title = r.Title,
                     Description = r.Description,
                     Author = r.Author,
+                    CollectionType = r.CollectionType,
                     Type = r.Type,
-                    SubjectName = r.Subject.Name,
+                    SubjectName = r.Subject != null
+                        ? r.Subject.Name
+                        : null,
                     CategoryName = r.Category.Name,
                     AudienceType = r.AudienceType,
                     HasCover = r.CoverStorageKey != null,
@@ -221,9 +227,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     Id = resource.Id,
                     Title = resource.Title,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
                     CategoryName = resource.Category.Name,
 
                     AudienceType = resource.AudienceType,
@@ -278,9 +287,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     Id = resource.Id,
                     Title = resource.Title,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
                     CategoryName = resource.Category.Name,
 
                     CoverStorageKey = resource.CoverStorageKey,
@@ -331,6 +343,7 @@ namespace SchoolLibrary.Infrastructure.Services
                     Title = resource.Title,
                     Description = resource.Description,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
                     FileStorageKey = resource.FileStorageKey,
@@ -342,7 +355,9 @@ namespace SchoolLibrary.Infrastructure.Services
                     ExternalUrl = resource.ExternalUrl,
 
                     SubjectId = resource.SubjectId,
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
 
                     CategoryId = resource.CategoryId,
                     CategoryName = resource.Category.Name,
@@ -531,6 +546,14 @@ namespace SchoolLibrary.Infrastructure.Services
                 .Distinct()
                 .ToArray();
 
+            ValidateCollectionRules(
+                model.CollectionType,
+                model.SubjectId,
+                model.AudienceType,
+                model.IsPubliclyVisible,
+                gradeLevelIds,
+                schoolClassIds);
+
             ValidateResourceLocation(
                 model.Type,
                 model.FileStorageKey,
@@ -549,6 +572,7 @@ namespace SchoolLibrary.Infrastructure.Services
                 model.FileContentType);
 
             await ValidateReferencesAsync(
+                model.CollectionType,
                 model.SubjectId,
                 model.CategoryId,
                 model.AudienceType,
@@ -571,6 +595,7 @@ namespace SchoolLibrary.Infrastructure.Services
                 Description = model.Description.Trim(),
                 Author = NormalizeOptionalText(model.Author),
 
+                CollectionType = model.CollectionType,
                 Type = model.Type,
                 AudienceType = model.AudienceType,
 
@@ -691,6 +716,14 @@ namespace SchoolLibrary.Infrastructure.Services
                 .Distinct()
                 .ToArray();
 
+            ValidateCollectionRules(
+                model.CollectionType,
+                model.SubjectId,
+                model.AudienceType,
+                model.IsPubliclyVisible,
+                gradeLevelIds,
+                schoolClassIds);
+
             ValidateResourceLocation(
                 model.Type,
                 model.FileStorageKey,
@@ -709,6 +742,7 @@ namespace SchoolLibrary.Infrastructure.Services
                 model.FileContentType);
 
             await ValidateReferencesAsync(
+                model.CollectionType,
                 model.SubjectId,
                 model.CategoryId,
                 model.AudienceType,
@@ -838,9 +872,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     Title = resource.Title,
                     Description = resource.Description,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
                     CategoryName = resource.Category.Name,
 
                     AudienceType = resource.AudienceType,
@@ -907,8 +944,11 @@ namespace SchoolLibrary.Infrastructure.Services
                     Title = resource.Title,
                     Description = resource.Description,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
                     CategoryName = resource.Category.Name,
                     AudienceType = resource.AudienceType,
                     ModerationStatus = resource.ModerationStatus,
@@ -1112,9 +1152,12 @@ namespace SchoolLibrary.Infrastructure.Services
                     Title = resource.Title,
                     Description = resource.Description,
                     Author = resource.Author,
+                    CollectionType = resource.CollectionType,
                     Type = resource.Type,
 
-                    SubjectName = resource.Subject.Name,
+                    SubjectName = resource.Subject != null
+                        ? resource.Subject.Name
+                        : null,
                     CategoryName = resource.Category.Name,
 
                     AudienceType = resource.AudienceType,
@@ -1604,12 +1647,21 @@ namespace SchoolLibrary.Infrastructure.Services
                         resource.Author != null &&
                         resource.Author.Contains(searchTerm)
                     ) ||
-                    resource.Subject.Name.Contains(searchTerm) ||
+                    (
+                        resource.Subject != null &&
+                        resource.Subject.Name.Contains(searchTerm)
+                    ) ||
                     resource.Category.Name.Contains(searchTerm) ||
                     dbContext.Users.Any(user =>
                         user.Id == resource.SubmittedByUserId &&
                         (user.FirstName + " " + user.LastName)
                             .Contains(searchTerm)));
+            }
+
+            if (queryModel.CollectionType.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.CollectionType == queryModel.CollectionType.Value);
             }
 
             if (queryModel.SubjectId.HasValue)
@@ -1836,33 +1888,75 @@ namespace SchoolLibrary.Infrastructure.Services
             }
         }
 
+        private static void ValidateCollectionRules(
+            ResourceCollectionType collectionType,
+            Guid? subjectId,
+            ResourceAudienceType audienceType,
+            bool isPubliclyVisible,
+            IReadOnlyCollection<int> gradeLevelIds,
+            IReadOnlyCollection<Guid> schoolClassIds)
+        {
+            if (!Enum.IsDefined(collectionType))
+            {
+                throw new ValidationException("Избраната секция е невалидна.");
+            }
+
+            if (collectionType != ResourceCollectionType.ELibrary)
+            {
+                return;
+            }
+
+            if (subjectId.HasValue)
+            {
+                throw new ValidationException(
+                    "Ресурс от Е-библиотеката не трябва да има учебен предмет.");
+            }
+
+            if (audienceType != ResourceAudienceType.AllStudents ||
+                gradeLevelIds.Count > 0 ||
+                schoolClassIds.Count > 0)
+            {
+                throw new ValidationException(
+                    "Ресурсите от Е-библиотеката трябва да бъдат за всички ученици.");
+            }
+
+            if (!isPubliclyVisible)
+            {
+                throw new ValidationException(
+                    "Ресурсите от Е-библиотеката трябва да бъдат видими в публичния каталог.");
+            }
+        }
+
         // =========================================================
         // REFERENCES AND AUDIENCE VALIDATION
         // =========================================================
 
         private async Task ValidateReferencesAsync(
-            Guid subjectId,
+            ResourceCollectionType collectionType,
+            Guid? subjectId,
             Guid categoryId,
             ResourceAudienceType audienceType,
             IReadOnlyCollection<int> gradeLevelIds,
             IReadOnlyCollection<Guid> schoolClassIds,
             CancellationToken cancellationToken)
         {
-            if (subjectId == Guid.Empty)
+            if (collectionType == ResourceCollectionType.EducationalResources)
             {
-                throw new ValidationException(
-                    "Трябва да бъде избран валиден предмет.");
-            }
+                if (!subjectId.HasValue || subjectId.Value == Guid.Empty)
+                {
+                    throw new ValidationException(
+                        "За учебен ресурс трябва да бъде избран валиден предмет.");
+                }
 
-            var subjectExists =
-                await dbContext.Subjects.AnyAsync(
-                    subject => subject.Id == subjectId,
+                var subjectExists = await dbContext.Subjects.AnyAsync(
+                    subject => subject.Id == subjectId.Value,
                     cancellationToken);
 
-            if (!subjectExists)
-            {
-                throw new ValidationException(
-                    "Избраният предмет не съществува.");
+                if (!subjectExists)
+                {
+                    throw new ValidationException(
+                        "Избраният предмет не съществува.");
+                }
             }
 
             if (categoryId == Guid.Empty)
@@ -1871,15 +1965,16 @@ namespace SchoolLibrary.Infrastructure.Services
                     "Трябва да бъде избрана валидна категория.");
             }
 
-            var categoryExists =
-                await dbContext.Categories.AnyAsync(
-                    category => category.Id == categoryId,
-                    cancellationToken);
+            var categoryExists = await dbContext.Categories.AnyAsync(
+                category =>
+                    category.Id == categoryId &&
+                    category.CollectionType == collectionType,
+                cancellationToken);
 
             if (!categoryExists)
             {
                 throw new ValidationException(
-                    "Избраната категория не съществува.");
+                    "Избраната категория не принадлежи към избраната секция.");
             }
 
             switch (audienceType)
