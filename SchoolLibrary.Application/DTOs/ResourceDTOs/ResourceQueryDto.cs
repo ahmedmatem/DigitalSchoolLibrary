@@ -1,4 +1,4 @@
-﻿using SchoolLibrary.Domain.Enums;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 {
@@ -11,6 +11,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
         private int pageSize = DefaultPageSize;
 
         public string? Search { get; set; }
+
+        public ResourceCollectionType? CollectionType { get; set; }
 
         public Guid? SubjectId { get; set; }
 
@@ -39,14 +41,9 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
             get => pageSize;
             set
             {
-                if (value < 1)
-                {
-                    pageSize = DefaultPageSize;
-                }
-                else
-                {
-                    pageSize = Math.Min(value, MaxPageSize);
-                }
+                pageSize = value < 1
+                    ? DefaultPageSize
+                    : Math.Min(value, MaxPageSize);
             }
         }
     }
