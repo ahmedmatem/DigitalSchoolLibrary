@@ -541,6 +541,12 @@ namespace SchoolLibrary.Infrastructure.Services
                 model.FileContentType,
                 model.FileSize);
 
+            ValidateResourceFileType(
+                model.Type,
+                model.FileStorageKey,
+                model.OriginalFileName,
+                model.FileContentType);
+
             await ValidateReferencesAsync(
                 model.SubjectId,
                 model.CategoryId,
@@ -694,6 +700,12 @@ namespace SchoolLibrary.Infrastructure.Services
                 model.OriginalFileName,
                 model.FileContentType,
                 model.FileSize);
+
+            ValidateResourceFileType(
+                model.Type,
+                model.FileStorageKey,
+                model.OriginalFileName,
+                model.FileContentType);
 
             await ValidateReferencesAsync(
                 model.SubjectId,
@@ -1763,6 +1775,63 @@ namespace SchoolLibrary.Infrastructure.Services
             {
                 throw new ValidationException(
                     "Размерът на качения файл е невалиден.");
+            }
+        }
+
+        private static void ValidateResourceFileType(
+            ResourceType type,
+            string? fileStorageKey,
+            string? originalFileName,
+            string? fileContentType)
+        {
+            if (string.IsNullOrWhiteSpace(fileStorageKey))
+            {
+                return;
+            }
+
+            var originalExtension =
+                Path.GetExtension(originalFileName) ?? string.Empty;
+
+            var storageExtension =
+                Path.GetExtension(fileStorageKey) ?? string.Empty;
+
+            var expectedVideoContentType =
+                originalExtension.ToLowerInvariant() switch
+                {
+                    ".mp4" => "video/mp4",
+                    ".webm" => "video/webm",
+                    _ => null
+                };
+
+            var isVideoFile =
+                expectedVideoContentType is not null ||
+                fileContentType?.StartsWith(
+                    "video/",
+                    StringComparison.OrdinalIgnoreCase) == true;
+
+            if (type == ResourceType.Video)
+            {
+                if (expectedVideoContentType is null ||
+                    !string.Equals(
+                        fileContentType,
+                        expectedVideoContentType,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    !string.Equals(
+                        originalExtension,
+                        storageExtension,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ValidationException(
+                        "Видео ресурсът трябва да съдържа валиден MP4 или WebM файл.");
+                }
+
+                return;
+            }
+
+            if (isVideoFile)
+            {
+                throw new ValidationException(
+                    "За MP4 или WebM файл трябва да бъде избран тип „Видео“.");
             }
         }
 
