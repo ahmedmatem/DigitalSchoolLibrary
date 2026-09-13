@@ -1,7 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Application.DTOs.LookupDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Infrastructure.Services
 {
@@ -31,10 +32,20 @@ namespace SchoolLibrary.Infrastructure.Services
 
         public async Task<IReadOnlyCollection<CategoryLookupDto>>
             GetCategoriesAsync(
+                ResourceCollectionType? collectionType = null,
                 CancellationToken cancellationToken = default)
         {
-            return await dbContext.Categories
+            var query = dbContext.Categories
                 .AsNoTracking()
+                .AsQueryable();
+
+            if (collectionType.HasValue)
+            {
+                query = query.Where(category =>
+                    category.CollectionType == collectionType.Value);
+            }
+
+            return await query
                 .OrderBy(category => category.Name)
                 .Select(category => new CategoryLookupDto
                 {
