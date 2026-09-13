@@ -205,6 +205,8 @@ namespace SchoolLibrary.Infrastructure.Services
                 .AsNoTracking()
                 .Where(resource =>
                     !resource.IsArchived &&
+                    resource.CollectionType ==
+                        ResourceCollectionType.EducationalResources &&
                     resource.ModerationStatus ==
                         ResourceModerationStatus.Approved);
 
