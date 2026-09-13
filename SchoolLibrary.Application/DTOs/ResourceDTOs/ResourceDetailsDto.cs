@@ -1,4 +1,4 @@
-﻿using SchoolLibrary.Domain.Enums;
+using SchoolLibrary.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace SchoolLibrary.Application.DTOs.ResourceDTOs
@@ -12,6 +12,8 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
         public string Description { get; set; } = string.Empty;
 
         public string? Author { get; set; }
+
+        public ResourceCollectionType CollectionType { get; set; }
 
         public ResourceType Type { get; set; }
 
@@ -27,9 +29,9 @@ namespace SchoolLibrary.Application.DTOs.ResourceDTOs
 
         public string? ExternalUrl { get; set; }
 
-        public Guid SubjectId { get; set; }
+        public Guid? SubjectId { get; set; }
 
-        public string SubjectName { get; set; } = string.Empty;
+        public string? SubjectName { get; set; }
 
         public Guid CategoryId { get; set; }
 
