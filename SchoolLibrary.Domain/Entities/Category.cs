@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Domain.Entities
 {
@@ -9,6 +7,8 @@ namespace SchoolLibrary.Domain.Entities
         public Guid Id { get; set; }
 
         public string Name { get; set; } = string.Empty;
+
+        public ResourceCollectionType CollectionType { get; set; }
 
         public ICollection<Resource> Resources { get; set; }
             = new HashSet<Resource>();
