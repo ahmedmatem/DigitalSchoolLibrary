@@ -103,10 +103,13 @@ namespace SchoolLibrary.Infrastructure.Services
                     Id = savedResource.Resource.Id,
                     Title = savedResource.Resource.Title,
                     Author = savedResource.Resource.Author,
+                    CollectionType = savedResource.Resource.CollectionType,
                     Type = savedResource.Resource.Type,
 
                     SubjectName =
-                        savedResource.Resource.Subject.Name,
+                        savedResource.Resource.Subject != null
+                            ? savedResource.Resource.Subject.Name
+                            : null,
 
                     CategoryName =
                         savedResource.Resource.Category.Name,
@@ -324,10 +327,20 @@ namespace SchoolLibrary.Infrastructure.Services
                         savedResource.Resource.Author.Contains(
                             searchTerm)
                     ) ||
-                    savedResource.Resource.Subject.Name.Contains(
-                        searchTerm) ||
+                    (
+                        savedResource.Resource.Subject != null &&
+                        savedResource.Resource.Subject.Name.Contains(
+                            searchTerm)
+                    ) ||
                     savedResource.Resource.Category.Name.Contains(
                         searchTerm));
+            }
+
+            if (queryModel.CollectionType.HasValue)
+            {
+                query = query.Where(savedResource =>
+                    savedResource.Resource.CollectionType ==
+                    queryModel.CollectionType.Value);
             }
 
             if (queryModel.SubjectId.HasValue)

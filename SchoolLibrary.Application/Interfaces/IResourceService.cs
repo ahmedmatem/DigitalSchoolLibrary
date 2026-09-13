@@ -1,6 +1,7 @@
 ﻿using SchoolLibrary.Application.Common.Models;
 using SchoolLibrary.Application.DTOs.FileDtos;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Application.Interfaces
 {
@@ -121,6 +122,8 @@ namespace SchoolLibrary.Application.Interfaces
 
         // =========================================================
 
-        Task<MyResourcesSummaryDto> GetMineSummaryAsync(CancellationToken cancellationToken = default);
+        Task<MyResourcesSummaryDto> GetMineSummaryAsync(
+            ResourceCollectionType? collectionType = null,
+            CancellationToken cancellationToken = default);
     }
 }

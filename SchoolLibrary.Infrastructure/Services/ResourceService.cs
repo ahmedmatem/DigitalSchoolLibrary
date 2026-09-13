@@ -782,6 +782,7 @@ namespace SchoolLibrary.Infrastructure.Services
             resource.Description = model.Description.Trim();
             resource.Author = NormalizeOptionalText(model.Author);
 
+            resource.CollectionType = model.CollectionType;
             resource.Type = model.Type;
             resource.AudienceType = model.AudienceType;
 
@@ -2140,8 +2141,10 @@ namespace SchoolLibrary.Infrastructure.Services
             };
         }
 
-        public async Task<MyResourcesSummaryDto> 
-            GetMineSummaryAsync(CancellationToken cancellationToken = default)
+        public async Task<MyResourcesSummaryDto>
+            GetMineSummaryAsync(
+                ResourceCollectionType? collectionType = null,
+                CancellationToken cancellationToken = default)
         {
             var currentUserId = GetRequiredCurrentUserId();
 
@@ -2150,6 +2153,12 @@ namespace SchoolLibrary.Infrastructure.Services
                 .Where(resource =>
                     !resource.IsArchived &&
                     resource.SubmittedByUserId == currentUserId);
+
+            if (collectionType.HasValue)
+            {
+                query = query.Where(resource =>
+                    resource.CollectionType == collectionType.Value);
+            }
 
             var total = await query.CountAsync(
                 cancellationToken);
