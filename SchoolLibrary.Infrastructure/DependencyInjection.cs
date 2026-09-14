@@ -48,6 +48,11 @@ namespace SchoolLibrary.Infrastructure
                 .AddAuthentication(IdentityConstants.ApplicationScheme)
                 .AddIdentityCookies();
 
+            services.Configure<SecurityStampValidatorOptions>(options =>
+            {
+                options.ValidationInterval = TimeSpan.Zero;
+            });
+
             services.ConfigureApplicationCookie(options =>
             {
                 options.Cookie.Name = "SchoolLibrary.Auth";
