@@ -14,15 +14,21 @@ namespace SchoolLibrary.Infrastructure.Services
         private readonly UserManager<ApplicationUser> userManager;
         private readonly SignInManager<ApplicationUser> signInManager;
         private readonly ApplicationDbContext dbContext;
+        private readonly SchoolLibrary.Application.Common.Interfaces.IEmailSender emailSender;
+        private readonly SchoolLibrary.Infrastructure.Email.EmailOptions emailOptions;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ApplicationDbContext dbContext)
+            ApplicationDbContext dbContext,
+            SchoolLibrary.Application.Common.Interfaces.IEmailSender emailSender,
+            Microsoft.Extensions.Options.IOptions<SchoolLibrary.Infrastructure.Email.EmailOptions> emailOptions)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.dbContext = dbContext;
+            this.emailSender = emailSender;
+            this.emailOptions = emailOptions.Value;
         }
 
         public async Task<MeDto> RegisterAsync(
@@ -111,6 +117,48 @@ namespace SchoolLibrary.Infrastructure.Services
         public Task LogoutAsync()
         {
             return signInManager.SignOutAsync();
+        }
+
+        public async Task ForgotPasswordAsync(
+            ForgotPasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var email = model.Email.Trim();
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is null || !user.IsActive)
+            {
+                return;
+            }
+
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var url = $"{emailOptions.FrontendBaseUrl.TrimEnd('/')}/reset-password" +
+                $"?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+            await emailSender.SendPasswordResetAsync(email, url, cancellationToken);
+        }
+
+        public async Task ResetPasswordAsync(
+            ResetPasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await userManager.FindByEmailAsync(model.Email.Trim());
+            if (user is null || !user.IsActive)
+            {
+                throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+            }
+
+            var result = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+            }
+
+            user.MustChangePassword = false;
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                throw CreateIdentityValidationException(updateResult);
+            }
+            await userManager.UpdateSecurityStampAsync(user);
         }
 
         public async Task ChangePasswordAsync(

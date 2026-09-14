@@ -10,6 +10,7 @@ using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
 using SchoolLibrary.Infrastructure.Identity;
+using SchoolLibrary.Infrastructure.Email;
 using SchoolLibrary.Infrastructure.Services;
 using SchoolLibrary.Infrastructure.Storage;
 
@@ -47,6 +48,11 @@ namespace SchoolLibrary.Infrastructure
             services
                 .AddAuthentication(IdentityConstants.ApplicationScheme)
                 .AddIdentityCookies();
+
+            services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                options.TokenLifespan = TimeSpan.FromMinutes(30);
+            });
 
             services.Configure<SecurityStampValidatorOptions>(options =>
             {
@@ -118,6 +124,20 @@ namespace SchoolLibrary.Infrastructure
                 return new AmazonS3Client(
                     credentials,
                     configuration);
+            });
+
+            services.AddOptions<EmailOptions>()
+                .Bind(configuration.GetSection(EmailOptions.SectionName))
+                .PostConfigure(options =>
+                {
+                    var apiToken = configuration["RESEND_APITOKEN"];
+                    if (!string.IsNullOrWhiteSpace(apiToken)) options.ApiToken = apiToken;
+                });
+
+            services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.resend.com/");
+                client.Timeout = TimeSpan.FromSeconds(15);
             });
 
             services.AddScoped<IFileStorageService, R2FileStorageService>();
