@@ -35,6 +35,8 @@ namespace SchoolLibrary.Infrastructure.Data
 
         public DbSet<SavedResource> SavedResources => Set<SavedResource>();
 
+        public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

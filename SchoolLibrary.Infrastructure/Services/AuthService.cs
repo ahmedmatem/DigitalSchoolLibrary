@@ -87,7 +87,7 @@ namespace SchoolLibrary.Infrastructure.Services
 
             var user = await userManager.FindByEmailAsync(email);
 
-            if (user is null)
+            if (user is null || !user.IsActive)
             {
                 return null;
             }

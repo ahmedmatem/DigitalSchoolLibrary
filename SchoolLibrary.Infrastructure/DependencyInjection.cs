@@ -119,6 +119,7 @@ namespace SchoolLibrary.Infrastructure
             services.AddScoped<ILookupService, LookupService>();
             services.AddScoped<IResourceService, ResourceService>();
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IAdminUserService, AdminUserService>();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ISavedResourceService, SavedResourceService>();
 
