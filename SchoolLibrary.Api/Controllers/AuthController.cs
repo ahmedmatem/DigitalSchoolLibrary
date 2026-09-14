@@ -60,6 +60,21 @@ namespace SchoolLibrary.Api.Controllers
             return NoContent();
         }
 
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(
+            ChangePasswordDto model,
+            CancellationToken cancellationToken)
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            await authService.ChangePasswordAsync(userId, model, cancellationToken);
+            return NoContent();
+        }
+
         [HttpGet("me")]
         public async Task<ActionResult<MeDto>> Me(
             CancellationToken cancellationToken)

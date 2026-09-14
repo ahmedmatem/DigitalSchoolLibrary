@@ -113,13 +113,45 @@ namespace SchoolLibrary.Infrastructure.Services
             return signInManager.SignOutAsync();
         }
 
+        public async Task ChangePasswordAsync(
+            Guid userId,
+            ChangePasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await userManager.FindByIdAsync(userId.ToString());
+            if (user is null || !user.IsActive)
+            {
+                throw new ValidationException("Потребителят не е намерен или е деактивиран.");
+            }
+
+            var result = await userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                throw CreateIdentityValidationException(result);
+            }
+
+            user.MustChangePassword = false;
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                throw CreateIdentityValidationException(updateResult);
+            }
+
+            await userManager.UpdateSecurityStampAsync(user);
+            await signInManager.RefreshSignInAsync(user);
+        }
+
         public async Task<MeDto?> GetMeAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());
 
-            if (user is null)
+            if (user is null || !user.IsActive)
             {
                 return null;
             }
@@ -177,7 +209,9 @@ namespace SchoolLibrary.Infrastructure.Services
                 GradeNumber = schoolData.GradeNumber,
 
                 SchoolClassId = user.SchoolClassId,
-                SchoolClassName = schoolData.SchoolClassName
+                SchoolClassName = schoolData.SchoolClassName,
+
+                MustChangePassword = user.MustChangePassword
             };
         }
 
