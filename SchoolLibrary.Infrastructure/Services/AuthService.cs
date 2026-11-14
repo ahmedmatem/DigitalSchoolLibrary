@@ -68,7 +68,9 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (!createResult.Succeeded)
             {
-                throw CreateIdentityValidationException(createResult);
+                throw CreateIdentityValidationException(
+                    createResult,
+                    "Регистрацията не беше успешна.");
             }
 
             var roleResult = await userManager.AddToRoleAsync(user, RoleConstants.Student);
@@ -77,7 +79,9 @@ namespace SchoolLibrary.Infrastructure.Services
             {
                 await userManager.DeleteAsync(user);
 
-                throw CreateIdentityValidationException(roleResult);
+                throw CreateIdentityValidationException(
+                    roleResult,
+                    "Регистрацията не беше успешна.");
             }
 
             await signInManager.SignInAsync(user, isPersistent: false);
@@ -149,7 +153,14 @@ namespace SchoolLibrary.Infrastructure.Services
             var result = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
             if (!result.Succeeded)
             {
-                throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+                if (result.Errors.Any(error => error.Code == "InvalidToken"))
+                {
+                    throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+                }
+
+                throw CreateIdentityValidationException(
+                    result,
+                    "Новата парола не отговаря на изискванията.");
             }
 
             user.MustChangePassword = false;
@@ -179,7 +190,9 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (!result.Succeeded)
             {
-                throw CreateIdentityValidationException(result);
+                throw CreateIdentityValidationException(
+                    result,
+                    "Новата парола не отговаря на изискванията.");
             }
 
             user.MustChangePassword = false;
@@ -293,7 +306,9 @@ namespace SchoolLibrary.Infrastructure.Services
             }
         }
 
-        private static ValidationException CreateIdentityValidationException(IdentityResult result)
+        private static ValidationException CreateIdentityValidationException(
+            IdentityResult result,
+            string message = "Операцията не беше успешна.")
         {
             var errors = result.Errors
                 .GroupBy(error => error.Code)
@@ -303,7 +318,7 @@ namespace SchoolLibrary.Infrastructure.Services
                         .Select(error => error.Description)
                         .ToArray());
 
-            return new ValidationException("Регистрацията не беше успешна.", errors);
+            return new ValidationException(message, errors);
         }
     }
 }
