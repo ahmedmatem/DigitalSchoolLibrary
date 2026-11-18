@@ -53,6 +53,8 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
 
             builder
                 .Property(r => r.CollectionType)
+                // Zero is not a valid collection type; it means the SQL default should apply.
+                .HasSentinel((ResourceCollectionType)0)
                 .HasDefaultValue(ResourceCollectionType.EducationalResources)
                 .IsRequired();
 

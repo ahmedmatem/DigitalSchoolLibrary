@@ -29,3 +29,9 @@ active account, whitespace normalization, frontend base paths/trailing slashes,
 and literal expected URLs with reserved characters in the email/token. The
 email sender is a strict mock; tests verify cancellation-token forwarding and
 error propagation without sending real email or retrying delivery.
+
+CollectionTypeConfigurationTests validates the SQL Server model without opening
+a connection. The collection-default warning is treated as an error; explicit
+EducationalResources/ELibrary values must remain unchanged when tracked.
+Zero is intentionally the unset sentinel because it is not a valid enum member.
+The SQL default remains EducationalResources, with no schema/default change.
