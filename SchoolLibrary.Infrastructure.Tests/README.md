@@ -23,3 +23,9 @@ cover both password operations and both initial flag values.
 This restores in-memory flag consistency; it does not roll back the preceding
 Identity password write or provide a transaction across both writes. A caller
 may receive an error even though the password has already changed.
+
+ForgotPassword cases cover missing/inactive accounts, one reset email for an
+active account, whitespace normalization, frontend base paths/trailing slashes,
+and literal expected URLs with reserved characters in the email/token. The
+email sender is a strict mock; tests verify cancellation-token forwarding and
+error propagation without sending real email or retrying delivery.

@@ -22,6 +22,8 @@ public class AuthServiceTests : IDisposable
     private readonly Mock<SignInManager<ApplicationUser>> signIn;
     private readonly ApplicationDbContext db;
     private readonly AuthService service;
+    private readonly Mock<IEmailSender> emailSender = new(MockBehavior.Strict);
+    private readonly EmailOptions emailOptions = new();
     private readonly ApplicationUser user = new()
     {
         Id = Guid.NewGuid(),
@@ -44,7 +46,7 @@ public class AuthServiceTests : IDisposable
         db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
         service = new AuthService(users.Object, signIn.Object, db,
-            Mock.Of<IEmailSender>(), Options.Create(new EmailOptions()));
+            emailSender.Object, Options.Create(emailOptions));
 
         users.Setup(manager => manager.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         users.Setup(manager => manager.FindByEmailAsync("student@example.com")).ReturnsAsync(user);
@@ -245,6 +247,80 @@ public class AuthServiceTests : IDisposable
 
         Assert.Null(result);
         users.Verify(manager => manager.GetRolesAsync(It.IsAny<ApplicationUser>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ForgotPasswordAsync_MissingOrInactiveUser_DoesNotGenerateTokenOrSendEmail(bool missing)
+    {
+        if (missing)
+            users.Setup(manager => manager.FindByEmailAsync("student@example.com")).ReturnsAsync((ApplicationUser?)null);
+        else
+            user.IsActive = false;
+
+        await service.ForgotPasswordAsync(new ForgotPasswordDto { Email = " student@example.com " });
+
+        users.Verify(manager => manager.FindByEmailAsync("student@example.com"), Times.Once);
+        users.Verify(manager => manager.GeneratePasswordResetTokenAsync(It.IsAny<ApplicationUser>()), Times.Never);
+        emailSender.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData("https://library.example", "student@example.com", "simple-token",
+        "https://library.example/reset-password?email=student%40example.com&token=simple-token")]
+    [InlineData("https://library.example/", "student+books@example.com", "a+b/c==&next?#%",
+        "https://library.example/reset-password?email=student%2Bbooks%40example.com&token=a%2Bb%2Fc%3D%3D%26next%3F%23%25")]
+    [InlineData("https://library.example/portal///", "student@example.com", "token with spaces",
+        "https://library.example/portal/reset-password?email=student%40example.com&token=token%20with%20spaces")]
+    public async Task ForgotPasswordAsync_ActiveUser_SendsEncodedResetLink(
+        string baseUrl, string email, string token, string expectedUrl)
+    {
+        emailOptions.FrontendBaseUrl = baseUrl;
+        user.Email = email;
+        users.Setup(manager => manager.FindByEmailAsync(email)).ReturnsAsync(user);
+        users.Setup(manager => manager.GeneratePasswordResetTokenAsync(user)).ReturnsAsync(token);
+        using var cancellation = new CancellationTokenSource();
+        emailSender.Setup(sender => sender.SendPasswordResetAsync(email, expectedUrl, cancellation.Token))
+            .Returns(Task.CompletedTask);
+
+        await service.ForgotPasswordAsync(new ForgotPasswordDto { Email = $"  {email}  " }, cancellation.Token);
+
+        users.Verify(manager => manager.FindByEmailAsync(email), Times.Once);
+        users.Verify(manager => manager.GeneratePasswordResetTokenAsync(user), Times.Once);
+        emailSender.Verify(sender => sender.SendPasswordResetAsync(email, expectedUrl, cancellation.Token), Times.Once);
+        emailSender.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_TokenGenerationFails_PropagatesErrorWithoutSendingEmail()
+    {
+        var failure = new InvalidOperationException("Token provider failed.");
+        users.Setup(manager => manager.GeneratePasswordResetTokenAsync(user)).ThrowsAsync(failure);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ForgotPasswordAsync(
+            new ForgotPasswordDto { Email = "student@example.com" }));
+
+        Assert.Same(failure, exception);
+        emailSender.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_EmailDeliveryFails_PropagatesErrorWithoutRetrying()
+    {
+        users.Setup(manager => manager.GeneratePasswordResetTokenAsync(user)).ReturnsAsync("reset-token");
+        var failure = new HttpRequestException("Email provider unavailable.");
+        emailSender.Setup(sender => sender.SendPasswordResetAsync(
+            "student@example.com", It.IsAny<string>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => service.ForgotPasswordAsync(
+            new ForgotPasswordDto { Email = "student@example.com" }));
+
+        Assert.Same(failure, exception);
+        users.Verify(manager => manager.GeneratePasswordResetTokenAsync(user), Times.Once);
+        emailSender.Verify(sender => sender.SendPasswordResetAsync(
+            "student@example.com", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        emailSender.VerifyNoOtherCalls();
     }
 
     private Task ChangePasswordAsync() => service.ChangePasswordAsync(user.Id, new ChangePasswordDto
