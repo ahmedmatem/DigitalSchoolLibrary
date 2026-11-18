@@ -140,10 +140,13 @@ public class AuthServiceTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task PasswordOperation_UserUpdateFails_ThrowsWithoutRefreshingSession(bool reset)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task PasswordOperation_UserUpdateFails_RestoresFlagWithoutRefreshingSession(bool reset, bool initialFlag)
     {
+        user.MustChangePassword = initialFlag;
         users.Setup(manager => manager.ChangePasswordAsync(user, "current123", "new123"))
             .ReturnsAsync(IdentityResult.Success);
         users.Setup(manager => manager.ResetPasswordAsync(user, "reset-token", "new123"))
@@ -154,7 +157,32 @@ public class AuthServiceTests : IDisposable
         var exception = await Assert.ThrowsAsync<ValidationException>(
             () => reset ? ResetPasswordAsync() : ChangePasswordAsync());
 
+        Assert.Equal(initialFlag, user.MustChangePassword);
         Assert.Equal("Could not save user.", Assert.Single(exception.Errors["UpdateFailed"]));
+        users.Verify(manager => manager.UpdateSecurityStampAsync(It.IsAny<ApplicationUser>()), Times.Never);
+        signIn.Verify(manager => manager.RefreshSignInAsync(It.IsAny<ApplicationUser>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task PasswordOperation_UserUpdateThrows_RestoresFlagAndRethrows(bool reset, bool initialFlag)
+    {
+        user.MustChangePassword = initialFlag;
+        users.Setup(manager => manager.ChangePasswordAsync(user, "current123", "new123"))
+            .ReturnsAsync(IdentityResult.Success);
+        users.Setup(manager => manager.ResetPasswordAsync(user, "reset-token", "new123"))
+            .ReturnsAsync(IdentityResult.Success);
+        var failure = new InvalidOperationException("Could not save user.");
+        users.Setup(manager => manager.UpdateAsync(user)).ThrowsAsync(failure);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => reset ? ResetPasswordAsync() : ChangePasswordAsync());
+
+        Assert.Same(failure, exception);
+        Assert.Equal(initialFlag, user.MustChangePassword);
         users.Verify(manager => manager.UpdateSecurityStampAsync(It.IsAny<ApplicationUser>()), Times.Never);
         signIn.Verify(manager => manager.RefreshSignInAsync(It.IsAny<ApplicationUser>()), Times.Never);
     }
