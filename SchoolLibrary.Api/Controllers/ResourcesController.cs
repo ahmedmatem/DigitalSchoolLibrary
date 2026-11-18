@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SchoolLibrary.Application.DTOs.ResourceDTOs;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Domain.Constants;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Api.Controllers
 {
@@ -74,9 +75,13 @@ namespace SchoolLibrary.Api.Controllers
 
         [Authorize(Roles = RoleConstants.Teacher + "," + RoleConstants.Admin)]
         [HttpGet("mine/summary")]
-        public async Task<IActionResult> GetMineSummary(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetMineSummary(
+            [FromQuery] ResourceCollectionType? collectionType,
+            CancellationToken cancellationToken)
         {
-            var result = await resourceService.GetMineSummaryAsync(cancellationToken);
+            var result = await resourceService.GetMineSummaryAsync(
+                collectionType,
+                cancellationToken);
 
             return Ok(result);
         }

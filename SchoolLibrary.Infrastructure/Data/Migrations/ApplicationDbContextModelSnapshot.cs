@@ -153,11 +153,47 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.AdminAuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("AdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("TargetUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdminUserId");
+
+                    b.HasIndex("TargetUserId", "CreatedAtUtc");
+
+                    b.ToTable("AdminAuditLogs");
+                });
+
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CollectionType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -166,7 +202,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("CollectionType", "Name")
                         .IsUnique();
 
                     b.ToTable("Categories");
@@ -175,37 +211,80 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         new
                         {
                             Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            CollectionType = 1,
                             Name = "Теория"
                         },
                         new
                         {
                             Id = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
+                            CollectionType = 1,
                             Name = "Задачи"
                         },
                         new
                         {
                             Id = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
+                            CollectionType = 1,
                             Name = "Презентации"
                         },
                         new
                         {
                             Id = new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+                            CollectionType = 1,
                             Name = "Тестове"
                         },
                         new
                         {
                             Id = new Guid("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                            CollectionType = 1,
                             Name = "Проекти"
                         },
                         new
                         {
                             Id = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+                            CollectionType = 1,
                             Name = "Работни листове"
                         },
                         new
                         {
                             Id = new Guid("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
+                            CollectionType = 1,
                             Name = "Подготовка за изпит"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000001"),
+                            CollectionType = 2,
+                            Name = "Художествена литература"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000002"),
+                            CollectionType = 2,
+                            Name = "Поезия"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000003"),
+                            CollectionType = 2,
+                            Name = "Статии и публикации"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000004"),
+                            CollectionType = 2,
+                            Name = "Научнопопулярна литература"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000005"),
+                            CollectionType = 2,
+                            Name = "Списания"
+                        },
+                        new
+                        {
+                            Id = new Guid("e1000000-0000-0000-0000-000000000006"),
+                            CollectionType = 2,
+                            Name = "Справочна литература"
                         });
                 });
 
@@ -292,6 +371,11 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("CollectionType")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<string>("CoverStorageKey")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -330,9 +414,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .HasDefaultValue(true);
 
                     b.Property<int>("ModerationStatus")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(2);
+                        .HasColumnType("int");
 
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(255)
@@ -348,7 +430,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Property<Guid?>("ReviewedByUserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("SubjectId")
+                    b.Property<Guid?>("SubjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("SubmittedAtUtc")
@@ -372,6 +454,8 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("CollectionType");
+
                     b.HasIndex("IsArchived");
 
                     b.HasIndex("ModerationStatus");
@@ -382,7 +466,12 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     b.HasIndex("SubmittedByUserId");
 
-                    b.ToTable("Resources");
+                    b.ToTable("Resources", t =>
+                        {
+                            t.HasCheckConstraint("CK_Resources_CollectionSubject", "([CollectionType] = 1 AND [SubjectId] IS NOT NULL) OR ([CollectionType] = 2 AND [SubjectId] IS NULL)");
+
+                            t.HasCheckConstraint("CK_Resources_ELibraryVisibility", "[CollectionType] <> 2 OR ([AudienceType] = 1 AND [IsPubliclyVisible] = 1)");
+                        });
                 });
 
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.ResourceGradeLevel", b =>
@@ -688,6 +777,16 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTimeOffset?>("DeactivatedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("DeactivatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DeactivationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -708,6 +807,11 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.Property<int?>("GradeLevelId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -718,6 +822,9 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     b.Property<DateTimeOffset?>("LockoutEnd")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("bit");
 
                     b.Property<string>("NormalizedEmail")
                         .HasMaxLength(256)
@@ -735,6 +842,12 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("PromotedToTeacherAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("PromotedToTeacherByUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("SchoolClassId")
                         .HasColumnType("uniqueidentifier");
@@ -817,6 +930,21 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("SchoolLibrary.Domain.Entities.AdminAuditLog", b =>
+                {
+                    b.HasOne("SchoolLibrary.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolLibrary.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("TargetUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("SchoolLibrary.Domain.Entities.Resource", b =>
                 {
                     b.HasOne("SchoolLibrary.Domain.Entities.Category", "Category")
@@ -833,8 +961,7 @@ namespace SchoolLibrary.Infrastructure.Data.Migrations
                     b.HasOne("SchoolLibrary.Domain.Entities.Subject", "Subject")
                         .WithMany("Resources")
                         .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SchoolLibrary.Infrastructure.Identity.ApplicationUser", null)
                         .WithMany()

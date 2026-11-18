@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using SchoolLibrary.Application.DTOs.LookupDTOs;
 using SchoolLibrary.Application.Interfaces;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Api.Controllers
 {
@@ -33,10 +34,14 @@ namespace SchoolLibrary.Api.Controllers
             typeof(IReadOnlyCollection<CategoryLookupDto>),
             StatusCodes.Status200OK)]
         public async Task<ActionResult<IReadOnlyCollection<CategoryLookupDto>>>
-            GetCategories(CancellationToken cancellationToken)
+            GetCategories(
+                [FromQuery] ResourceCollectionType? collectionType,
+                CancellationToken cancellationToken)
         {
             var categories = await lookupService
-                .GetCategoriesAsync(cancellationToken);
+                .GetCategoriesAsync(
+                    collectionType,
+                    cancellationToken);
 
             return Ok(categories);
         }

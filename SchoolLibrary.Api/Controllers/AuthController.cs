@@ -52,11 +52,48 @@ namespace SchoolLibrary.Api.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("password-recovery")]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(
+            ForgotPasswordDto model,
+            CancellationToken cancellationToken)
+        {
+            await authService.ForgotPasswordAsync(model, cancellationToken);
+            return Ok(new { message = "Ако съществува активен профил с този имейл, ще бъде изпратен линк за възстановяване." });
+        }
+
+        [AllowAnonymous]
+        [Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("password-recovery")]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(
+            ResetPasswordDto model,
+            CancellationToken cancellationToken)
+        {
+            await authService.ResetPasswordAsync(model, cancellationToken);
+            return NoContent();
+        }
+
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             await authService.LogoutAsync();
 
+            return NoContent();
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword(
+            ChangePasswordDto model,
+            CancellationToken cancellationToken)
+        {
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            await authService.ChangePasswordAsync(userId, model, cancellationToken);
             return NoContent();
         }
 

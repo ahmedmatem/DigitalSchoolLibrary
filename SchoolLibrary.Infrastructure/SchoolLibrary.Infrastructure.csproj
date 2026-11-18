@@ -11,6 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Override SqlClient's transitive 9.0.4 dependency with a patched version. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.23" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.101.6" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">

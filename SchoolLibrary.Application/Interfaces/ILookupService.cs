@@ -1,4 +1,5 @@
-﻿using SchoolLibrary.Application.DTOs.LookupDTOs;
+using SchoolLibrary.Application.DTOs.LookupDTOs;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Application.Interfaces
 {
@@ -8,7 +9,9 @@ namespace SchoolLibrary.Application.Interfaces
             GetSubjectsAsync(CancellationToken cancellationToken = default);
 
         Task<IReadOnlyCollection<CategoryLookupDto>>
-            GetCategoriesAsync(CancellationToken cancellationToken = default);
+            GetCategoriesAsync(
+                ResourceCollectionType? collectionType = null,
+                CancellationToken cancellationToken = default);
 
         Task<IReadOnlyCollection<GradeLevelLookupDto>>
             GetGradeLevelsAsync(CancellationToken cancellationToken = default);

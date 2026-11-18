@@ -14,15 +14,21 @@ namespace SchoolLibrary.Infrastructure.Services
         private readonly UserManager<ApplicationUser> userManager;
         private readonly SignInManager<ApplicationUser> signInManager;
         private readonly ApplicationDbContext dbContext;
+        private readonly SchoolLibrary.Application.Common.Interfaces.IEmailSender emailSender;
+        private readonly SchoolLibrary.Infrastructure.Email.EmailOptions emailOptions;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ApplicationDbContext dbContext)
+            ApplicationDbContext dbContext,
+            SchoolLibrary.Application.Common.Interfaces.IEmailSender emailSender,
+            Microsoft.Extensions.Options.IOptions<SchoolLibrary.Infrastructure.Email.EmailOptions> emailOptions)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.dbContext = dbContext;
+            this.emailSender = emailSender;
+            this.emailOptions = emailOptions.Value;
         }
 
         public async Task<MeDto> RegisterAsync(
@@ -62,7 +68,9 @@ namespace SchoolLibrary.Infrastructure.Services
 
             if (!createResult.Succeeded)
             {
-                throw CreateIdentityValidationException(createResult);
+                throw CreateIdentityValidationException(
+                    createResult,
+                    "Регистрацията не беше успешна.");
             }
 
             var roleResult = await userManager.AddToRoleAsync(user, RoleConstants.Student);
@@ -71,7 +79,9 @@ namespace SchoolLibrary.Infrastructure.Services
             {
                 await userManager.DeleteAsync(user);
 
-                throw CreateIdentityValidationException(roleResult);
+                throw CreateIdentityValidationException(
+                    roleResult,
+                    "Регистрацията не беше успешна.");
             }
 
             await signInManager.SignInAsync(user, isPersistent: false);
@@ -87,7 +97,7 @@ namespace SchoolLibrary.Infrastructure.Services
 
             var user = await userManager.FindByEmailAsync(email);
 
-            if (user is null)
+            if (user is null || !user.IsActive)
             {
                 return null;
             }
@@ -113,13 +123,108 @@ namespace SchoolLibrary.Infrastructure.Services
             return signInManager.SignOutAsync();
         }
 
+        public async Task ForgotPasswordAsync(
+            ForgotPasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var email = model.Email.Trim();
+            var user = await userManager.FindByEmailAsync(email);
+            if (user is null || !user.IsActive)
+            {
+                return;
+            }
+
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            var url = $"{emailOptions.FrontendBaseUrl.TrimEnd('/')}/reset-password" +
+                $"?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+            await emailSender.SendPasswordResetAsync(email, url, cancellationToken);
+        }
+
+        public async Task ResetPasswordAsync(
+            ResetPasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await userManager.FindByEmailAsync(model.Email.Trim());
+            if (user is null || !user.IsActive)
+            {
+                throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+            }
+
+            var result = await userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                if (result.Errors.Any(error => error.Code == "InvalidToken"))
+                {
+                    throw new ValidationException("Линкът за възстановяване е невалиден или е изтекъл.");
+                }
+
+                throw CreateIdentityValidationException(
+                    result,
+                    "Новата парола не отговаря на изискванията.");
+            }
+
+            await ClearMustChangePasswordAsync(user);
+            await userManager.UpdateSecurityStampAsync(user);
+        }
+
+        public async Task ChangePasswordAsync(
+            Guid userId,
+            ChangePasswordDto model,
+            CancellationToken cancellationToken = default)
+        {
+            var user = await userManager.FindByIdAsync(userId.ToString());
+            if (user is null || !user.IsActive)
+            {
+                throw new ValidationException("Потребителят не е намерен или е деактивиран.");
+            }
+
+            var result = await userManager.ChangePasswordAsync(
+                user,
+                model.CurrentPassword,
+                model.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                throw CreateIdentityValidationException(
+                    result,
+                    "Новата парола не отговаря на изискванията.");
+            }
+
+            await ClearMustChangePasswordAsync(user);
+
+            await userManager.UpdateSecurityStampAsync(user);
+            await signInManager.RefreshSignInAsync(user);
+        }
+
+        private async Task ClearMustChangePasswordAsync(ApplicationUser user)
+        {
+            var previousValue = user.MustChangePassword;
+            user.MustChangePassword = false;
+
+            try
+            {
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    throw CreateIdentityValidationException(updateResult);
+                }
+            }
+            catch
+            {
+                // Keep the tracked user consistent when the flag cannot be saved.
+                // The preceding Identity password operation has already succeeded.
+                user.MustChangePassword = previousValue;
+                throw;
+            }
+        }
+
         public async Task<MeDto?> GetMeAsync(
             Guid userId,
             CancellationToken cancellationToken = default)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());
 
-            if (user is null)
+            if (user is null || !user.IsActive)
             {
                 return null;
             }
@@ -177,7 +282,9 @@ namespace SchoolLibrary.Infrastructure.Services
                 GradeNumber = schoolData.GradeNumber,
 
                 SchoolClassId = user.SchoolClassId,
-                SchoolClassName = schoolData.SchoolClassName
+                SchoolClassName = schoolData.SchoolClassName,
+
+                MustChangePassword = user.MustChangePassword
             };
         }
 
@@ -211,7 +318,9 @@ namespace SchoolLibrary.Infrastructure.Services
             }
         }
 
-        private static ValidationException CreateIdentityValidationException(IdentityResult result)
+        private static ValidationException CreateIdentityValidationException(
+            IdentityResult result,
+            string message = "Операцията не беше успешна.")
         {
             var errors = result.Errors
                 .GroupBy(error => error.Code)
@@ -221,7 +330,7 @@ namespace SchoolLibrary.Infrastructure.Services
                         .Select(error => error.Description)
                         .ToArray());
 
-            return new ValidationException("Регистрацията не беше успешна.", errors);
+            return new ValidationException(message, errors);
         }
     }
 }

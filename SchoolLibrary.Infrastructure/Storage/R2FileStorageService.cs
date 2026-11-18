@@ -10,11 +10,19 @@ namespace SchoolLibrary.Infrastructure.Storage
 {
     public sealed class R2FileStorageService : IFileStorageService
     {
-        private static readonly HashSet<string> AllowedResourceExtensions =
+        private static readonly HashSet<string> AllowedDocumentExtensions =
             new(StringComparer.OrdinalIgnoreCase)
             {
                 ".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".zip"
             };
+
+        private static readonly IReadOnlyDictionary<string, string>
+            AllowedVideoContentTypes =
+                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    [".mp4"] = "video/mp4",
+                    [".webm"] = "video/webm"
+                };
 
         private static readonly HashSet<string> AllowedCoverExtensions =
             new(StringComparer.OrdinalIgnoreCase)
@@ -180,7 +188,33 @@ namespace SchoolLibrary.Infrastructure.Storage
             switch (model.Kind)
             {
                 case StoredFileKind.Resource:
-                    if (!AllowedResourceExtensions.Contains(extension))
+                    if (AllowedVideoContentTypes.TryGetValue(
+                            extension,
+                            out var expectedVideoContentType))
+                    {
+                        if (!string.Equals(
+                                model.ContentType,
+                                expectedVideoContentType,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            throw new ValidationException(
+                                "Видео файлът трябва да бъде MP4 или WebM с валиден MIME тип.");
+                        }
+
+                        if (model.FileSize >
+                            options.MaxVideoFileSizeBytes)
+                        {
+                            throw new ValidationException(
+                                "Видео файлът надвишава максималния размер от 250 MB.");
+                        }
+
+                        break;
+                    }
+
+                    if (!AllowedDocumentExtensions.Contains(extension) ||
+                        model.ContentType.StartsWith(
+                            "video/",
+                            StringComparison.OrdinalIgnoreCase))
                     {
                         throw new ValidationException("Този формат на учебен ресурс не е разрешен.");
                     }

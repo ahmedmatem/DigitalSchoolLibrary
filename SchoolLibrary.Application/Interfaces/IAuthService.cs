@@ -14,6 +14,19 @@ namespace SchoolLibrary.Application.Interfaces
 
         Task LogoutAsync();
 
+        Task ForgotPasswordAsync(
+            ForgotPasswordDto model,
+            CancellationToken cancellationToken = default);
+
+        Task ResetPasswordAsync(
+            ResetPasswordDto model,
+            CancellationToken cancellationToken = default);
+
+        Task ChangePasswordAsync(
+            Guid userId,
+            ChangePasswordDto model,
+            CancellationToken cancellationToken = default);
+
         Task<MeDto?> GetMeAsync(
             Guid userId,
             CancellationToken cancellationToken = default);

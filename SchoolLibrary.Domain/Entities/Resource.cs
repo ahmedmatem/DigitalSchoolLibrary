@@ -1,7 +1,4 @@
-﻿using SchoolLibrary.Domain.Enums;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using SchoolLibrary.Domain.Enums;
 
 namespace SchoolLibrary.Domain.Entities
 {
@@ -14,6 +11,8 @@ namespace SchoolLibrary.Domain.Entities
         public string Description { get; set; } = string.Empty;
 
         public string? Author { get; set; }
+
+        public ResourceCollectionType CollectionType { get; set; }
 
         public ResourceType Type { get; set; }
 
@@ -33,9 +32,9 @@ namespace SchoolLibrary.Domain.Entities
 
         public string? CoverStorageKey { get; set; }
 
-        public Guid SubjectId { get; set; }
+        public Guid? SubjectId { get; set; }
 
-        public Subject Subject { get; set; } = null!;
+        public Subject? Subject { get; set; }
 
         public Guid CategoryId { get; set; }
 

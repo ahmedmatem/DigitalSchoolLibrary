@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SchoolLibrary.Domain.Entities;
+using SchoolLibrary.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,7 +22,16 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .HasMaxLength(NameMaxLength);
 
             builder
-                .HasIndex(category => category.Name)
+                .Property(category => category.CollectionType)
+                .HasDefaultValue(ResourceCollectionType.EducationalResources)
+                .IsRequired();
+
+            builder
+                .HasIndex(category => new
+                {
+                    category.CollectionType,
+                    category.Name
+                })
                 .IsUnique();
         }
     }

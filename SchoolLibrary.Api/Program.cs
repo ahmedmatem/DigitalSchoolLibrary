@@ -1,6 +1,7 @@
 using SchoolLibrary.Api.ExceptionHandling;
 using SchoolLibrary.Infrastructure;
 using SchoolLibrary.Infrastructure.Identity;
+using System.Threading.RateLimiting;
 
 namespace SchoolLibrary.Api
 {
@@ -14,6 +15,19 @@ namespace SchoolLibrary.Api
 
             builder.Services.AddControllers();
             builder.Services.AddOpenApi();
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy("password-recovery", context =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(15),
+                            QueueLimit = 0
+                        }));
+            });
 
             builder.Services.AddProblemDetails();
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -43,6 +57,8 @@ namespace SchoolLibrary.Api
             }
 
             app.UseHttpsRedirection();
+
+            app.UseRateLimiter();
 
             app.UseCors("AngularClient");
 

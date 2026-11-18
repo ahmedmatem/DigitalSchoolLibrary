@@ -23,5 +23,7 @@
         public Guid? SchoolClassId { get; set; }
 
         public string? SchoolClassName { get; set; }
+
+        public bool MustChangePassword { get; set; }
     }
 }

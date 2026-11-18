@@ -12,11 +12,13 @@
 
         public string SecretAccessKey { get; set; } = string.Empty;
 
-        public int UploadUrlExpirationMinutes { get; set; } = 10;
+        public int UploadUrlExpirationMinutes { get; set; } = 30;
 
         public int DownloadUrlExpirationMinutes { get; set; } = 5;
 
         public long MaxResourceFileSizeBytes { get; set; } = 50 * 1024 * 1024;
+
+        public long MaxVideoFileSizeBytes { get; set; } = 250 * 1024 * 1024;
 
         public long MaxCoverFileSizeBytes { get; set; }  = 5 * 1024 * 1024;
     }

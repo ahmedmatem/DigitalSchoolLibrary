@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SchoolLibrary.Domain.Entities;
+using SchoolLibrary.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -241,37 +242,80 @@ namespace SchoolLibrary.Infrastructure.Data.Seed
                 new Category
                 {
                     Id = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                    Name = "Теория"
+                    Name = "Теория",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                    Name = "Задачи"
+                    Name = "Задачи",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                    Name = "Презентации"
+                    Name = "Презентации",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd"),
-                    Name = "Тестове"
+                    Name = "Тестове",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                    Name = "Проекти"
+                    Name = "Проекти",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                    Name = "Работни листове"
+                    Name = "Работни листове",
+                    CollectionType = ResourceCollectionType.EducationalResources
                 },
                 new Category
                 {
                     Id = Guid.Parse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"),
-                    Name = "Подготовка за изпит"
+                    Name = "Подготовка за изпит",
+                    CollectionType = ResourceCollectionType.EducationalResources
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000001"),
+                    Name = "Художествена литература",
+                    CollectionType = ResourceCollectionType.ELibrary
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000002"),
+                    Name = "Поезия",
+                    CollectionType = ResourceCollectionType.ELibrary
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000003"),
+                    Name = "Статии и публикации",
+                    CollectionType = ResourceCollectionType.ELibrary
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000004"),
+                    Name = "Научнопопулярна литература",
+                    CollectionType = ResourceCollectionType.ELibrary
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000005"),
+                    Name = "Списания",
+                    CollectionType = ResourceCollectionType.ELibrary
+                },
+                new Category
+                {
+                    Id = Guid.Parse("e1000000-0000-0000-0000-000000000006"),
+                    Name = "Справочна литература",
+                    CollectionType = ResourceCollectionType.ELibrary
                 }
             );
         }

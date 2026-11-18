@@ -23,6 +23,10 @@ namespace SchoolLibrary.Infrastructure.Data.Configurations
                 .HasMaxLength(100)
                 .IsRequired();
 
+            builder.Property(user => user.DeactivationReason).HasMaxLength(500);
+
+            builder.Property(user => user.IsActive).HasDefaultValue(true);
+
             builder.HasOne<SchoolLibrary.Domain.Entities.GradeLevel>()
                 .WithMany()
                 .HasForeignKey(user => user.GradeLevelId)
