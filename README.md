@@ -24,4 +24,16 @@ artifact for 14 days, including when tests fail.
 Tests use isolated in-memory databases and test email senders; no database,
 storage, email credentials, or repository secrets are required. The workflow
 does not deploy or run migrations. See each test project's README for coverage
-and known limitations. Dependency vulnerability warnings remain visible in CI.
+and known limitations.
+
+Infrastructure explicitly references `System.Security.Cryptography.Pkcs` 9.0.23
+because EF Core SqlServer / Microsoft.Data.SqlClient otherwise resolves 9.0.4.
+This patch update addresses GHSA-2fmv-rv2c-59x7 and GHSA-846f-f764-76mx without
+upgrading the SQL driver. Keep this reference until the transitive dependency
+resolves a patched version. Check all projects, including transitive packages:
+
+```sh
+dotnet list SchoolLibrary.slnx package --vulnerable --include-transitive
+```
+
+NuGet vulnerability warnings remain visible in CI.
