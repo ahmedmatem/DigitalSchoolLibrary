@@ -1,4 +1,6 @@
 using SchoolLibrary.Api;
+using SchoolLibrary.Api.Configuration;
+using SchoolLibrary.Infrastructure.Email;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -25,6 +27,14 @@ public sealed class LibraryApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("ConnectionStrings:DefaultConnection", "Server=unused;Database=unused");
         builder.ConfigureTestServices(services =>
         {
+            services.PostConfigure<CorsSettings>(options => options.AllowedOrigins = ["https://library.example"]);
+            services.PostConfigure<EmailOptions>(options =>
+            {
+                options.ApiToken = "test-token";
+                options.FromAddress = "library@example.com";
+                options.FrontendBaseUrl = "https://library.example";
+                options.UseTestRecipient = false;
+            });
             services.RemoveAll<ApplicationDbContext>();
             services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();

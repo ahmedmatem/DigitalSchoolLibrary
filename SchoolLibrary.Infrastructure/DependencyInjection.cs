@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Hosting;
 using SchoolLibrary.Application.Common.Interfaces;
 using SchoolLibrary.Application.Interfaces;
 using SchoolLibrary.Infrastructure.Data;
@@ -19,12 +20,12 @@ namespace SchoolLibrary.Infrastructure
     public static class DependencyInjection
     {
         public static IServiceCollection AddInfrastructure(
-            this IServiceCollection services, IConfiguration configuration)
+            this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
         {
             var connectionString = configuration
-                .GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException(
-                    "Connection string 'DefaultConnection' was not found.");
+                .GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException("Connection string 'DefaultConnection' is required.");
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
@@ -126,13 +127,15 @@ namespace SchoolLibrary.Infrastructure
                     configuration);
             });
 
+            services.AddSingleton<IValidateOptions<EmailOptions>>(new EmailOptionsValidator(environment));
             services.AddOptions<EmailOptions>()
                 .Bind(configuration.GetSection(EmailOptions.SectionName))
                 .PostConfigure(options =>
                 {
                     var apiToken = configuration["RESEND_APITOKEN"];
                     if (!string.IsNullOrWhiteSpace(apiToken)) options.ApiToken = apiToken;
-                });
+                })
+                .ValidateOnStart();
 
             services.AddHttpClient<IEmailSender, ResendEmailSender>(client =>
             {

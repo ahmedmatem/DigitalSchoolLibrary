@@ -217,6 +217,30 @@ public class AuthControllerTests : IDisposable
         Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("https://library.example", true)]
+    [InlineData("https://untrusted.example", false)]
+    public async Task CorsPreflight_UsesConfiguredOrigins(string origin, bool allowed)
+    {
+        using var client = factory.CreateHttpsClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/auth/me");
+        request.Headers.Add("Origin", origin);
+        request.Headers.Add("Access-Control-Request-Method", "GET");
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        if (allowed)
+        {
+            Assert.Equal(origin, Assert.Single(response.Headers.GetValues("Access-Control-Allow-Origin")));
+            Assert.Equal("true", Assert.Single(response.Headers.GetValues("Access-Control-Allow-Credentials")));
+        }
+        else
+        {
+            Assert.False(response.Headers.Contains("Access-Control-Allow-Origin"));
+        }
+    }
+
     private static async Task LoginAsync(HttpClient client, string password = "current123")
     {
         using var response = await client.PostAsJsonAsync("/api/auth/login", new LoginDto
