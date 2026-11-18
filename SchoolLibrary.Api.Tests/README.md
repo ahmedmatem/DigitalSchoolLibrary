@@ -25,11 +25,9 @@ with field errors; generic forgot-password success; invalid/valid Identity reset
 tokens; rejected and successful password changes; MeDto flags and refreshed
 cookies; logout; and the sixth password-recovery request returning 429.
 
-Known existing defect discovered during this step: GlobalExceptionHandler stores
-ValidationProblemDetails in a ProblemDetails variable and passes that static
-type to WriteAsJsonAsync. Its application validation responses contain status,
-title, detail, and instance but omit the derived errors property. Automatic MVC
-validation responses do include errors. Tests check current application error
-details without asserting that errors must be absent. Restoring structured
-application errors requires a separate production fix and regression assertions;
-no production code is changed in this step.
+Application validation regression checks verify that GlobalExceptionHandler
+preserves the errors dictionary when serializing ValidationProblemDetails.
+Invalid reset tokens expose the general error entry; an incorrect current
+password exposes the Identity PasswordMismatch entry. Both responses retain
+their status, detail, and instance. Automatic MVC field validation remains
+covered separately.

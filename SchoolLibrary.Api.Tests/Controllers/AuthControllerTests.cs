@@ -79,9 +79,10 @@ public class AuthControllerTests : IDisposable
         Assert.NotNull(problem);
         Assert.Equal(400, problem.Status);
         Assert.Equal("/api/auth/reset-password", problem.Instance);
-        // The existing exception handler serializes ProblemDetails and drops derived Errors.
-        // Verify the public detail without asserting that the missing errors field is desirable.
         Assert.Equal("Линкът за възстановяване е невалиден или е изтекъл.", problem.Detail);
+        var error = Assert.Single(problem.Errors);
+        Assert.Equal("general", error.Key);
+        Assert.Equal(problem.Detail, Assert.Single(error.Value));
     }
 
     [Fact]
@@ -154,6 +155,9 @@ public class AuthControllerTests : IDisposable
         Assert.Equal(400, problem.Status);
         Assert.Equal("/api/auth/change-password", problem.Instance);
         Assert.Equal("Новата парола не отговаря на изискванията.", problem.Detail);
+        var error = Assert.Single(problem.Errors);
+        Assert.Equal("PasswordMismatch", error.Key);
+        Assert.False(string.IsNullOrWhiteSpace(Assert.Single(error.Value)));
         var me = await client.GetFromJsonAsync<MeDto>("/api/auth/me");
         Assert.NotNull(me);
         Assert.True(me.MustChangePassword);

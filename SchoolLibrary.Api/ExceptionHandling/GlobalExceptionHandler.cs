@@ -72,9 +72,18 @@ namespace SchoolLibrary.Api.ExceptionHandling
 
             httpContext.Response.StatusCode = statusCode;
 
-            await httpContext.Response.WriteAsJsonAsync(
-                problemDetails,
-                cancellationToken);
+            if (problemDetails is ValidationProblemDetails validationProblem)
+            {
+                await httpContext.Response.WriteAsJsonAsync(
+                    validationProblem,
+                    cancellationToken);
+            }
+            else
+            {
+                await httpContext.Response.WriteAsJsonAsync(
+                    problemDetails,
+                    cancellationToken);
+            }
 
             return true;
         }
