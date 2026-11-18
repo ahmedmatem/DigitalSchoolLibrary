@@ -163,12 +163,7 @@ namespace SchoolLibrary.Infrastructure.Services
                     "Новата парола не отговаря на изискванията.");
             }
 
-            user.MustChangePassword = false;
-            var updateResult = await userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                throw CreateIdentityValidationException(updateResult);
-            }
+            await ClearMustChangePasswordAsync(user);
             await userManager.UpdateSecurityStampAsync(user);
         }
 
@@ -195,15 +190,32 @@ namespace SchoolLibrary.Infrastructure.Services
                     "Новата парола не отговаря на изискванията.");
             }
 
-            user.MustChangePassword = false;
-            var updateResult = await userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                throw CreateIdentityValidationException(updateResult);
-            }
+            await ClearMustChangePasswordAsync(user);
 
             await userManager.UpdateSecurityStampAsync(user);
             await signInManager.RefreshSignInAsync(user);
+        }
+
+        private async Task ClearMustChangePasswordAsync(ApplicationUser user)
+        {
+            var previousValue = user.MustChangePassword;
+            user.MustChangePassword = false;
+
+            try
+            {
+                var updateResult = await userManager.UpdateAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    throw CreateIdentityValidationException(updateResult);
+                }
+            }
+            catch
+            {
+                // Keep the tracked user consistent when the flag cannot be saved.
+                // The preceding Identity password operation has already succeeded.
+                user.MustChangePassword = previousValue;
+                throw;
+            }
         }
 
         public async Task<MeDto?> GetMeAsync(
