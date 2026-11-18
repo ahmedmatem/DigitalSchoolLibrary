@@ -2,9 +2,9 @@ name: Backend tests
 
 on:
   push:
-    branches: [ai]
+    branches: [dev, master]
   pull_request:
-    branches: [ai]
+    branches: [master]
 
 permissions:
   contents: read

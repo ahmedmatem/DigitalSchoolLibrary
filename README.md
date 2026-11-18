@@ -12,7 +12,11 @@ dotnet test SchoolLibrary.slnx --configuration Release --no-build --no-restore -
 ```
 
 The Backend tests workflow (`.github/workflows/backend-tests.yml`) runs on pushes
-to `ai` and pull requests targeting `ai`. It builds the entire solution and runs
+to `dev`/`master` and pull requests targeting `master`. Pushes to `ai` do not
+trigger this workflow. A PR from `ai` to `master` still runs the pre-merge check.
+The workflow file must exist in a branch for its push checks to run. PR checks
+run before merge; push checks run after the pushed commit or merge.
+It builds the entire solution and runs
 the Application, Infrastructure, and API test projects. New commits cancel older
 runs for the same ref. TRX results are retained as the `backend-test-results`
 artifact for 14 days, including when tests fail.
